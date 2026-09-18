@@ -8,3 +8,4 @@
 # Project Members
 - Osval Montesinos Valladares
 - Tadhg Dunlop
+- Jeremy Pacla
