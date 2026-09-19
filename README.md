@@ -9,3 +9,4 @@
 - Osval Montesinos Valladares
 - Tadhg Dunlop
 - Jeremy Pacla
+- Jaime García Menéndez 
