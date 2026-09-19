@@ -9,4 +9,5 @@
 - Osval Montesinos Valladares
 - Tadhg Dunlop
 - Jeremy Pacla
-- Jaime García Menéndez 
+- Jaime García Menéndez
+- Haniya Shareef
