@@ -1,5 +1,5 @@
 # Communication Channel
-[Discord Channel](https://discord.gg/w46F8a2E)
+[Discord Channel](https://discord.gg/8GVDPXMU)
 
 # Shared Google Folder
 
