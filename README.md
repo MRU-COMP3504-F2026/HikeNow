@@ -1,5 +1,5 @@
 # Communication Channel
-[Discord Channel](https://discord.gg/8GVDPXMU)
+[Discord Channel](https://discord.gg/8GVDPXMU) (Expires every 24 hours)
 
 # Shared Google Folder
 
