@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "@supabase/ssr": "github:supabase/ssr",
+    "@supabase/supabase-js": "^2.117.3",
+    "dotenv": "^18.0.8",
+    "drizzle-kit": "^0.31.11",
+    "drizzle-orm": "^0.45.4",
+    "postgres": "^3.4.9",
+    "supabase": "^2.121.0"
+  }
+}
