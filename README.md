@@ -13,3 +13,9 @@
 - Jeremy Pacla
 - Jaime García Menéndez
 - Haniya Shareef
+
+# Dependencies
+```drizzle-orm```
+```drizzle-kit```
+```dotenv```
+```postgres```
