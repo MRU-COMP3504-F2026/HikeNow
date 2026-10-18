@@ -7,5 +7,8 @@
     "drizzle-orm": "^0.45.4",
     "postgres": "^3.4.9",
     "supabase": "^2.121.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5"
   }
 }
