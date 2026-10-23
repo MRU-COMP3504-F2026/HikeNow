@@ -109,13 +109,13 @@ export const hike = pgTable(
     name: varchar("name", { length: 255 }).notNull(),
     description: text("description"),
     difficulty: varchar("difficulty", { length: 50 }),
-    lenght: decimal("lenght", { precision: 10, scale: 2 }), 
+    length: decimal("length", { precision: 10, scale: 2 }), 
     equipment: text("equipment"),
     location: varchar("location", { length: 255 }),
     rating: decimal("rating", { precision: 3, scale: 2 }),
     landmarks: text("landmarks"),
   },
-  () => [
+  (table) => [
     pgPolicy("Hikes are viewable by everyone", {
       for: "select",
       to: "public",

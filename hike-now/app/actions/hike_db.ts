@@ -13,15 +13,15 @@ export async function getHikeByName(name: string) {
   return db.select().from(hike).where(eq(hike.name, name))
 }
 
-export async function createHike(name: string, description: string, difficulty: string, lenght: number, equipment: string[], location: string, rating: number, landmarks: string[]) {
+export async function createHike(name: string, description: string, difficulty: string, length: number, equipment: string, location: string, rating: number, landmarks: string) {
     const result = await db.insert(hike).values({ 
         name: name,
         description: description,
         difficulty: difficulty,
-        lenght: lenght, 
+        length: length.toString(), 
         equipment: equipment,
         location: location,
-        rating: rating,
+        rating: rating.toString(),
         landmarks: landmarks,
       })
       .returning(); 
