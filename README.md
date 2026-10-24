@@ -1,5 +1,5 @@
 # Communication Channel
-[Discord Channel](https://discord.gg/Mw3QqqxP) (Expires every 24 hours)
+[Discord Server](https://discord.gg/RmHTHj5gZ9) 
 
 # Shared Google Folder
 [Google Drive](https://drive.google.com/drive/folders/1Eg1H2vX3lAmY02DvXf1szu-1euWe6Js_?usp=sharing)
@@ -14,8 +14,4 @@
 - Jaime García Menéndez
 - Haniya Shareef
 
-# Dependencies
-```drizzle-orm```
-```drizzle-kit```
-```dotenv```
-```postgres```
+# CI/CD 
