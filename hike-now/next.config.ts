@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
+console.log(">>> VERCEL IS RUNNING IN:", process.cwd());
 
 const nextConfig: NextConfig = {
-  /* config options here */
   experimental: {
     agentFeedback: true,
   },
