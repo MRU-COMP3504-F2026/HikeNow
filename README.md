@@ -15,3 +15,13 @@
 - Haniya Shareef
 
 # CI/CD 
+
+
+
+| Platform | Pros for HikeNow | Cons for HikeNow |
+|---|---|---|
+| **GitHub Actions** | A natural fit if the repository is hosted on GitHub. It can run `npm ci`, `npm run lint`, and `npm run build`, and integrate with Vercel deployment and preview checks. | Workflow files and deployment configuration need maintenance. Secrets and environment-specific deployments require careful setup; it is less useful if the repository is hosted elsewhere. |
+| **GitLab CI/CD** | Repository, CI, environments, and deployment controls are integrated when using GitLab. Pipelines can run the same npm checks and manage protected deployment environments. | Less compelling if the project is hosted on GitHub. Pipeline configuration and runner setup add overhead for a starter app with only lint and build checks. |
+| **Azure Pipelines** | A strong fit for teams already using Azure DevOps or needing enterprise permissions, approvals, and deployment governance. It can build the Node.js app and deploy to Azure services. | Adds setup if there is no existing Azure DevOps environment. Since the app README recommends Vercel, Azure Pipelines may be a less direct deployment fit unless Azure is a requirement. |
+
+**Recommendation:** If the repository is on GitHub and Vercel is the intended host, start with GitHub Actions for CI checks and Vercel for hosting and deployments. Store `DATABASE_URL` and Supabase credentials in encrypted platform environment secrets. Keep Drizzle migrations as a separate, controlled deployment step rather than running them on every build. Add a test job once the project has tests.
