@@ -1,0 +1,112 @@
+[
+  {
+    "id": "2b7e7be9-22a9-4fe6-812e-580a0959e458",
+    "name": "Johnston Canyon",
+    "description": "Popular trail in Banff featuring dramatic canyon views, catwalks over rushing water, and stunning waterfalls.",
+    "difficulty": "Moderate Difficulty",
+    "length": 12.4,
+    "equipment": "helmet, hiking sticks, flashlight",
+    "location": "Alberta, Canada",
+    "rating": 4.5,
+    "landmarks": "Lower Falls, Upper Falls"
+  },
+  {
+    "id": "8a47f572-49ed-4122-b135-aa19dbad1b3f",
+    "name": "Cory Pass \u2013 Mt. Edith",
+    "description": "Strenuous high-alpine circuit offering spectacular close-up views of Mount Edith and Gargoyle Valley.",
+    "difficulty": "High Difficulty",
+    "length": 15.02,
+    "equipment": "boots, flashlight, hiking sticks",
+    "location": "Alberta, Canada",
+    "rating": 4.7,
+    "landmarks": "Gargoyle Valley Overlook"
+  },
+  {
+    "id": "8d7c0e27-c4f7-4960-baf0-6d86f021f6e8",
+    "name": "Old Fort Point",
+    "description": "Short, rewarding loop in Jasper offering panoramic vistas of the Athabasca River and surrounding peak ranges.",
+    "difficulty": "Easy Difficulty",
+    "length": 4.05,
+    "equipment": "hiking sticks, helmet",
+    "location": "Alberta, Canada",
+    "rating": 4.3,
+    "landmarks": "Athabasca River Viewpoint"
+  },
+  {
+    "id": "44c189dd-83ec-4b94-9abe-9567daad4839",
+    "name": "Yoho Lake - Ensign Creek",
+    "description": "Expansive backcountry loop in Yoho National Park leading past serene alpine lakes, rivers, and rugged mountain passes.",
+    "difficulty": "Very High Difficulty",
+    "length": 30.86,
+    "equipment": "helmet, jacket",
+    "location": "British Columbia, Canada",
+    "rating": 4.8,
+    "landmarks": "Ensign Creek Crossing, Yoho Lake"
+  },
+  {
+    "id": "d9fcc8a4-8342-4d50-b752-74ced3148a22",
+    "name": "Lake Agnes - Mirror Lake - Lake Louise",
+    "description": "Iconic Banff trail taking hikers past pristine mountain lakes up to the famous Lake Agnes Tea House.",
+    "difficulty": "Easy Difficulty",
+    "length": 6.1,
+    "equipment": "helmet, boots, hat",
+    "location": "Alberta, Canada",
+    "rating": 4.2,
+    "landmarks": "Lake Agnes Tea House, Mirror Lake"
+  },
+  {
+    "id": "025b1407-0354-439f-b191-31f8bb9c8ce7",
+    "name": "Maligne Canyon",
+    "description": "Deep limestone canyon trail with multiple bridges crossing sheer rock walls, waterfalls, and underground springs.",
+    "difficulty": "Easy Difficulty",
+    "length": 1.99,
+    "equipment": "boots, hat, helmet, hiking sticks",
+    "location": "Alberta, Canada",
+    "rating": 4.4,
+    "landmarks": "Fifth Bridge, Canyon Gorge"
+  },
+  {
+    "id": "36525e7e-2c70-48f4-8630-8d0c226747df",
+    "name": "Elk Trail",
+    "description": "Scenic and accessible trail showcasing vibrant autumn foliage and peaceful nature paths near the provincial border.",
+    "difficulty": "Easy Difficulty",
+    "length": 2.73,
+    "equipment": "helmet, boots, flashlight",
+    "location": "British Columbia, Canada",
+    "rating": 4.1,
+    "landmarks": "Elk River Overlook"
+  },
+  {
+    "id": "986a2b68-118d-4093-98f7-19868a945955",
+    "name": "Athabasca falls",
+    "description": "Short paved trail leading to powerful, thunderous waterfalls carved through quartzite canyons in Jasper National Park.",
+    "difficulty": "Easy Difficulty",
+    "length": 1.4,
+    "equipment": "jacket, flashlight",
+    "location": "Alberta, Canada",
+    "rating": 4.8,
+    "landmarks": "Athabasca Falls Viewpoint"
+  },
+  {
+    "id": "9e7220cd-39b0-475d-9fd7-59eadb822ea7",
+    "name": "Ha Ling Peak",
+    "description": "Steep summit trail in Canmore offering panoramic views over the Bow Valley.",
+    "difficulty": "High Difficulty",
+    "length": 7.2,
+    "equipment": "hiking sticks, flashlight, hat",
+    "location": "Canmore, Alberta, Canada",
+    "rating": 4.6,
+    "landmarks": "Ha Ling Peak Summit"
+  },
+  {
+    "id": "96d30e5f-e98f-445d-a010-dc25d7b09f7e",
+    "name": "Crypt Lake Trail",
+    "description": "World-renowned adventure trail with boat rides, ladders, a steel cable traverse, and a mountain tunnel.",
+    "difficulty": "High Difficulty",
+    "length": 17.2,
+    "equipment": "hat, boots, helmet, jacket",
+    "location": "Waterton Lakes, Alberta, Canada",
+    "rating": 4.9,
+    "landmarks": "Crypt Lake Waterfall & Tunnel"
+  }
+]
