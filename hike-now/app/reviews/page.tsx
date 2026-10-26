@@ -4,58 +4,51 @@ import Navbar from "../components/navbar";
 import StarRating from "../components/star-rating";
 import Tag from "../components/tag";
 
-type Review = {
-  id: number;
+// Import your raw JSON data files
+import hikesData from "../../temporary_data/hikes.json";
+import hikersData from "../../temporary_data/hikers.json";
+import reviewsData from "../../temporary_data/reviews.json";
+
+type ReviewUI = {
+  id: string;
   rating: number;
   condition: "good" | "neutral" | "bad";
-  tag: string;
+  tags: string[];
   title: string;
   comment: string;
   author: string;
-  date: string;
+  photoUrl?: string;
 };
 
-const reviews: Review[] = [
-  {
-    id: 1,
-    rating: 4,
-    condition: "good",
-    tag: "Muddy",
-    title: "Nice place",
-    comment:
-      "The views are incredibly beautiful! Got in there just for the first snow and I loved it!",
-    author: "Lisa Park",
-    date: "Oct 10, 2026",
-  },
-  {
-    id: 2,
-    rating: 4,
-    condition: "good",
-    tag: "Crowded",
-    title: "Nice place",
-    comment:
-      "The views are incredibly beautiful! Got in there just for the first snow and I loved it!",
-    author: "Lisa Park",
-    date: "Oct 10, 2026",
-  },
-  {
-    id: 3,
-    rating: 4,
-    condition: "good",
-    tag: "Snowy",
-    title: "Nice place",
-    comment:
-      "The views are incredibly beautiful! Got in there just for the first snow and I loved it!",
-    author: "Lisa Park",
-    date: "Oct 10, 2026",
-  },
-];
+// Select target trail (e.g., Lake Agnes)
+const targetTrailName = "Lake Agnes - Mirror Lake - Lake Louise";
+const currentHike = hikesData.find((h) => h.name === targetTrailName) || hikesData[0];
 
-function ConditionIcons({
-  selected,
-}: {
-  selected: Review["condition"];
-}) {
+// Join reviews with hiker details and map fields
+const formattedReviews: ReviewUI[] = reviewsData
+  .filter((r) => r.hikeId === currentHike.id)
+  .map((r, index) => {
+    const hiker = hikersData.find((h) => h.id === r.hikerId);
+    
+    const conditionMap: Record<string, "good" | "neutral" | "bad"> = {
+      good: "good",
+      mild: "neutral",
+      bad: "bad",
+    };
+
+    return {
+      id: r.id,
+      rating: Math.round(Number(r.rating)),
+      condition: conditionMap[r.condition] || "good",
+      tags: r.tags ? r.tags.split(", ").map((t) => t.trim()) : [],
+      title: r.title, 
+      comment: r.comments,
+      author: hiker ? hiker.email.split("@")[0] : "Anonymous Hiker",
+      photoUrl: r.photo,
+    };
+  });
+
+function ConditionIcons({ selected }: { selected: ReviewUI["condition"] }) {
   const conditions = [
     { key: "good", mouth: "M8 14s1.5 2 4 2 4-2 4-2" },
     { key: "neutral", mouth: "M9 15h6" },
@@ -108,16 +101,13 @@ function PhotoPlaceholder() {
         fill="none"
         aria-hidden="true"
       >
-        <path
-          d="M4 42 22 21l10 12 8-9 18 18H4Z"
-          fill="white"
-        />
+        <path d="M4 42 22 21l10 12 8-9 18 18H4Z" fill="white" />
       </svg>
     </div>
   );
 }
 
-function ReviewCard({ review }: { review: Review }) {
+function ReviewCard({ review }: { review: ReviewUI }) {
   return (
     <article className="rounded-control border border-border bg-background p-4 shadow-control">
       <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
@@ -128,9 +118,11 @@ function ReviewCard({ review }: { review: Review }) {
 
             <ConditionIcons selected={review.condition} />
 
-            <Tag className="px-2 py-1">
-              {review.tag}
-            </Tag>
+            {review.tags.map((tagText) => (
+              <Tag key={tagText} className="px-2 py-1 capitalize">
+                {tagText}
+              </Tag>
+            ))}
           </div>
 
           <h2 className="mb-1 text-nav font-semibold text-ink">
@@ -147,11 +139,8 @@ function ReviewCard({ review }: { review: Review }) {
             </span>
 
             <div>
-              <p className="text-small font-medium text-text">
+              <p className="text-small font-medium text-text capitalize">
                 {review.author}
-              </p>
-              <p className="text-small text-text-subtle">
-                {review.date}
               </p>
             </div>
           </div>
@@ -159,7 +148,6 @@ function ReviewCard({ review }: { review: Review }) {
 
         {/* Review photos */}
         <div className="flex gap-4">
-          <PhotoPlaceholder />
           <PhotoPlaceholder />
         </div>
       </div>
@@ -177,11 +165,12 @@ export default function ReviewsPage() {
         <section className="mb-10 flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <div>
             <h1 className="text-title font-semibold text-ink">
-              Lake Agnes - Mirror Lake - Lake Louise
+              {currentHike.name}
             </h1>
 
             <p className="mt-2 text-heading font-semibold text-ink">
-              ★ 4.2 (38 reviews) · 6.1 km · Easy Difficulty
+              ★ {currentHike.rating} ({formattedReviews.length} reviews) ·{" "}
+              {currentHike.length} km · {currentHike.difficulty}
             </p>
           </div>
 
@@ -198,14 +187,18 @@ export default function ReviewsPage() {
           </button>
         </section>
 
-        {/* Reviews */}
+        {/* Reviews list */}
         <section
           className="flex flex-col gap-4"
           aria-label="Trail reviews"
         >
-          {reviews.map((review) => (
-            <ReviewCard key={review.id} review={review} />
-          ))}
+          {formattedReviews.length > 0 ? (
+            formattedReviews.map((review) => (
+              <ReviewCard key={review.id} review={review} />
+            ))
+          ) : (
+            <p className="text-text-subtle">No reviews submitted for this trail yet.</p>
+          )}
         </section>
       </main>
 
