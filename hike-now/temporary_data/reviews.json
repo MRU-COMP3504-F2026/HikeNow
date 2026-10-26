@@ -7,7 +7,8 @@
     "tags": "rocky",
     "photo": "https://images.example.com/reviews/photo_1.jpg",
     "condition": "good",
-    "comments": "Great family-friendly walk with accessible paths and nice rest spots."
+    "comments": "Great family-friendly walk with accessible paths and nice rest spots.",
+    "title": "Incredible mountain scenery"
   },
   {
     "id": "73468339-8583-42e8-b5c5-4747a8156534",
@@ -17,7 +18,8 @@
     "tags": "quiet, rocky, clear",
     "photo": "https://images.example.com/reviews/photo_2.jpg",
     "condition": "bad",
-    "comments": "Great family-friendly walk with accessible paths and nice rest spots."
+    "comments": "Great family-friendly walk with accessible paths and nice rest spots.",
+    "title": "Challenging but rewarding"
   },
   {
     "id": "6cdf24c1-837f-4d07-ab6a-57cd9efee384",
@@ -27,7 +29,8 @@
     "tags": "rocky, snowy, quiet",
     "photo": "https://images.example.com/reviews/photo_3.jpg",
     "condition": "bad",
-    "comments": "Absolutely breathtaking views at the top! Highly recommend early morning start."
+    "comments": "Absolutely breathtaking views at the top! Highly recommend early morning start.",
+    "title": "Challenging but rewarding"
   },
   {
     "id": "b4f04581-29a9-42ea-b177-b59cd3dadbd4",
@@ -37,7 +40,8 @@
     "tags": "rocky, muddy, quiet",
     "photo": "https://images.example.com/reviews/photo_4.jpg",
     "condition": "mild",
-    "comments": "Challenging incline, but the panoramic vistas make it totally worth it."
+    "comments": "Challenging incline, but the panoramic vistas make it totally worth it.",
+    "title": "Challenging but rewarding"
   },
   {
     "id": "2d1843b5-81d7-4058-a052-d1ee1031f955",
@@ -47,7 +51,8 @@
     "tags": "quiet",
     "photo": "https://images.example.com/reviews/photo_5.jpg",
     "condition": "good",
-    "comments": "Trail was a bit muddy near the creek, but manageable with proper footwear."
+    "comments": "Trail was a bit muddy near the creek, but manageable with proper footwear.",
+    "title": "A bit tough, worth the effort"
   },
   {
     "id": "831ecaca-126c-4a80-9833-647399343d56",
@@ -57,7 +62,8 @@
     "tags": "crowded, snowy",
     "photo": "https://images.example.com/reviews/photo_6.jpg",
     "condition": "good",
-    "comments": "Beautiful scenery all around. Saw some mountain goats along the ridge!"
+    "comments": "Beautiful scenery all around. Saw some mountain goats along the ridge!",
+    "title": "A bit tough, worth the effort"
   },
   {
     "id": "ca41c78d-ce66-4f03-9602-03624d635a49",
@@ -67,7 +73,8 @@
     "tags": "muddy, clear, rocky",
     "photo": "https://images.example.com/reviews/photo_7.jpg",
     "condition": "good",
-    "comments": "Beautiful scenery all around. Saw some mountain goats along the ridge!"
+    "comments": "Beautiful scenery all around. Saw some mountain goats along the ridge!",
+    "title": "Incredible mountain scenery"
   },
   {
     "id": "52256fb0-7ad5-4701-8be6-9bac38a9d729",
@@ -77,7 +84,8 @@
     "tags": "muddy",
     "photo": "https://images.example.com/reviews/photo_8.jpg",
     "condition": "good",
-    "comments": "Trail was a bit muddy near the creek, but manageable with proper footwear."
+    "comments": "Trail was a bit muddy near the creek, but manageable with proper footwear.",
+    "title": "Unforgettable trail experience"
   },
   {
     "id": "55c34f3d-9089-4eb3-8197-c2679483b2e4",
@@ -87,7 +95,8 @@
     "tags": "crowded",
     "photo": "https://images.example.com/reviews/photo_9.jpg",
     "condition": "good",
-    "comments": "Absolutely breathtaking views at the top! Highly recommend early morning start."
+    "comments": "Absolutely breathtaking views at the top! Highly recommend early morning start.",
+    "title": "A bit tough, worth the effort"
   },
   {
     "id": "54632c31-4ff9-48e3-82e5-80af6b2a9b4a",
@@ -97,6 +106,7 @@
     "tags": "snowy, crowded",
     "photo": "https://images.example.com/reviews/photo_10.jpg",
     "condition": "mild",
-    "comments": "Challenging incline, but the panoramic vistas make it totally worth it."
+    "comments": "Challenging incline, but the panoramic vistas make it totally worth it.",
+    "title": "Breathtaking sights at the top"
   }
 ]

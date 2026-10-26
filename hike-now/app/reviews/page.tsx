@@ -17,7 +17,6 @@ type ReviewUI = {
   title: string;
   comment: string;
   author: string;
-  date: string;
   photoUrl?: string;
 };
 
@@ -31,25 +30,20 @@ const formattedReviews: ReviewUI[] = reviewsData
   .map((r, index) => {
     const hiker = hikersData.find((h) => h.id === r.hikerId);
     
-    // Convert 'mild' condition to 'neutral' for component compatibility
     const conditionMap: Record<string, "good" | "neutral" | "bad"> = {
       good: "good",
       mild: "neutral",
       bad: "bad",
     };
 
-    // Extract tags into array
-    const tagList = r.tags ? r.tags.split(", ").map((t) => t.trim()) : [];
-
     return {
       id: r.id,
       rating: Math.round(Number(r.rating)),
       condition: conditionMap[r.condition] || "good",
-      tags: tagList,
-      title: `${r.condition.toUpperCase()} Condition Hike`,
+      tags: r.tags ? r.tags.split(", ").map((t) => t.trim()) : [],
+      title: r.title, 
       comment: r.comments,
       author: hiker ? hiker.email.split("@")[0] : "Anonymous Hiker",
-      date: `Oct ${10 + index}, 2026`,
       photoUrl: r.photo,
     };
   });
@@ -147,9 +141,6 @@ function ReviewCard({ review }: { review: ReviewUI }) {
             <div>
               <p className="text-small font-medium text-text capitalize">
                 {review.author}
-              </p>
-              <p className="text-small text-text-subtle">
-                {review.date}
               </p>
             </div>
           </div>

@@ -140,6 +140,7 @@ export const review = pgTable(
     photo: varchar("photo", { length: 255 }),
     condition: varchar("condition", { length: 255 }),
     comments: text("comments"),
+    title: varchar("title", { length: 255 }),
   },
   (table) => [
     pgPolicy("Reviews are viewable by everyone", {
