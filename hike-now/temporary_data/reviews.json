@@ -1,0 +1,112 @@
+[
+  {
+    "id": "fccf49aa-5e37-4f00-84e8-62d444a12671",
+    "hikeId": "8d7c0e27-c4f7-4960-baf0-6d86f021f6e8",
+    "hikerId": "b4f73e86-bea6-4180-b8b3-23a0131f12e2",
+    "rating": 4.21,
+    "tags": "rocky",
+    "photo": "https://images.example.com/reviews/photo_1.jpg",
+    "condition": "good",
+    "comments": "Great family-friendly walk with accessible paths and nice rest spots.",
+    "title": "Incredible mountain scenery"
+  },
+  {
+    "id": "73468339-8583-42e8-b5c5-4747a8156534",
+    "hikeId": "2b7e7be9-22a9-4fe6-812e-580a0959e458",
+    "hikerId": "cbf814cb-be36-4eb5-943f-337f303ed6aa",
+    "rating": 4.35,
+    "tags": "quiet, rocky, clear",
+    "photo": "https://images.example.com/reviews/photo_2.jpg",
+    "condition": "bad",
+    "comments": "Great family-friendly walk with accessible paths and nice rest spots.",
+    "title": "Challenging but rewarding"
+  },
+  {
+    "id": "6cdf24c1-837f-4d07-ab6a-57cd9efee384",
+    "hikeId": "8d7c0e27-c4f7-4960-baf0-6d86f021f6e8",
+    "hikerId": "a4e0836b-0c42-4f41-9b31-c472085621cf",
+    "rating": 4.4,
+    "tags": "rocky, snowy, quiet",
+    "photo": "https://images.example.com/reviews/photo_3.jpg",
+    "condition": "bad",
+    "comments": "Absolutely breathtaking views at the top! Highly recommend early morning start.",
+    "title": "Challenging but rewarding"
+  },
+  {
+    "id": "b4f04581-29a9-42ea-b177-b59cd3dadbd4",
+    "hikeId": "986a2b68-118d-4093-98f7-19868a945955",
+    "hikerId": "fd2518e1-42ee-426f-93eb-c1b20f1e02b6",
+    "rating": 4.07,
+    "tags": "rocky, muddy, quiet",
+    "photo": "https://images.example.com/reviews/photo_4.jpg",
+    "condition": "mild",
+    "comments": "Challenging incline, but the panoramic vistas make it totally worth it.",
+    "title": "Challenging but rewarding"
+  },
+  {
+    "id": "2d1843b5-81d7-4058-a052-d1ee1031f955",
+    "hikeId": "d9fcc8a4-8342-4d50-b752-74ced3148a22",
+    "hikerId": "5de523d3-5f63-4633-afb8-e70d68a4c49c",
+    "rating": 4.42,
+    "tags": "quiet",
+    "photo": "https://images.example.com/reviews/photo_5.jpg",
+    "condition": "good",
+    "comments": "Trail was a bit muddy near the creek, but manageable with proper footwear.",
+    "title": "A bit tough, worth the effort"
+  },
+  {
+    "id": "831ecaca-126c-4a80-9833-647399343d56",
+    "hikeId": "025b1407-0354-439f-b191-31f8bb9c8ce7",
+    "hikerId": "51066a57-e404-4267-b379-7ef6743a7bd8",
+    "rating": 3.7,
+    "tags": "crowded, snowy",
+    "photo": "https://images.example.com/reviews/photo_6.jpg",
+    "condition": "good",
+    "comments": "Beautiful scenery all around. Saw some mountain goats along the ridge!",
+    "title": "A bit tough, worth the effort"
+  },
+  {
+    "id": "ca41c78d-ce66-4f03-9602-03624d635a49",
+    "hikeId": "8d7c0e27-c4f7-4960-baf0-6d86f021f6e8",
+    "hikerId": "cbf814cb-be36-4eb5-943f-337f303ed6aa",
+    "rating": 3.81,
+    "tags": "muddy, clear, rocky",
+    "photo": "https://images.example.com/reviews/photo_7.jpg",
+    "condition": "good",
+    "comments": "Beautiful scenery all around. Saw some mountain goats along the ridge!",
+    "title": "Incredible mountain scenery"
+  },
+  {
+    "id": "52256fb0-7ad5-4701-8be6-9bac38a9d729",
+    "hikeId": "d9fcc8a4-8342-4d50-b752-74ced3148a22",
+    "hikerId": "cbf814cb-be36-4eb5-943f-337f303ed6aa",
+    "rating": 4.42,
+    "tags": "muddy",
+    "photo": "https://images.example.com/reviews/photo_8.jpg",
+    "condition": "good",
+    "comments": "Trail was a bit muddy near the creek, but manageable with proper footwear.",
+    "title": "Unforgettable trail experience"
+  },
+  {
+    "id": "55c34f3d-9089-4eb3-8197-c2679483b2e4",
+    "hikeId": "d9fcc8a4-8342-4d50-b752-74ced3148a22",
+    "hikerId": "900191a2-eaa2-411f-a35e-c329520f39d7",
+    "rating": 4.63,
+    "tags": "crowded",
+    "photo": "https://images.example.com/reviews/photo_9.jpg",
+    "condition": "good",
+    "comments": "Absolutely breathtaking views at the top! Highly recommend early morning start.",
+    "title": "A bit tough, worth the effort"
+  },
+  {
+    "id": "54632c31-4ff9-48e3-82e5-80af6b2a9b4a",
+    "hikeId": "d9fcc8a4-8342-4d50-b752-74ced3148a22",
+    "hikerId": "cbf814cb-be36-4eb5-943f-337f303ed6aa",
+    "rating": 3.88,
+    "tags": "snowy, crowded",
+    "photo": "https://images.example.com/reviews/photo_10.jpg",
+    "condition": "mild",
+    "comments": "Challenging incline, but the panoramic vistas make it totally worth it.",
+    "title": "Breathtaking sights at the top"
+  }
+]
