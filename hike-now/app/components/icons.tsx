@@ -82,3 +82,40 @@ export const InstagramIcon = (p: IconProps) => (
     <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
   </Svg>
 );
+
+export const SmileIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="10" />
+    <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+    <path d="M9 9h.01M15 9h.01" />
+  </Svg>
+);
+
+export const MehIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="10" />
+    <path d="M8 15h8" />
+    <path d="M9 9h.01M15 9h.01" />
+  </Svg>
+);
+
+export const SadIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="10" />
+    <path d="M16 16s-1.5-2-4-2-4 2-4 2" />
+    <path d="M9 9h.01M15 9h.01" />
+  </Svg>
+);
+
+export const MountainIcon = (p: IconProps) => (
+  <svg
+    width={p.size ?? 20}
+    height={p.size ?? 20}
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className={p.className}
+    aria-hidden="true"
+  >
+    <path d="M2 20 9 8l4 7 2.5-4L22 20z" />
+  </svg>
+);

@@ -12,7 +12,7 @@ export type StarRatingProps = {
   className?: string;
 };
 
-function Star({ filled, size }: { filled: boolean; size: number }) {
+export function StarIcon({ filled, size }: { filled: boolean; size: number }) {
   return (
     <svg
       width={size}
@@ -53,10 +53,10 @@ export default function StarRating({
             aria-label={`Rate ${n} out of ${max} stars`}
             className="cursor-pointer rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
-            <Star filled={n <= rounded} size={size} />
+            <StarIcon filled={n <= rounded} size={size} />
           </button>
         ) : (
-          <Star key={n} filled={n <= rounded} size={size} />
+          <StarIcon key={n} filled={n <= rounded} size={size} />
         ),
       )}
     </div>
