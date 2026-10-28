@@ -43,13 +43,15 @@ export default function Home() {
         >
           {featuredTrails.map((trail) => (
             <TrailCard
-              key={trail.id}
-              name={trail.name}
-              location={trail.location}
-              rating={trail.rating}
-              length={trail.length}
-              difficulty={trail.difficulty}
-            />
+  key={trail.id}
+  name={trail.name}
+  location={trail.location}
+  imageUrl="/trail-placeholder.svg"
+  rating={trail.rating}
+  lengthKm={trail.length}
+  difficulty={trail.difficulty.replace(" Difficulty", "")}
+  href={`/trails/${trail.id}`}
+/>
           ))}
         </section>
       </main>
