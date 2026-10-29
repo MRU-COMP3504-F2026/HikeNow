@@ -4,7 +4,7 @@ import Navbar from "../components/navbar";
 import StarRating from "../components/star-rating";
 import Tag from "../components/tag";
 
-// Import your raw JSON data files
+// Import raw JSON data files
 import hikesData from "../../temporary_data/hikes.json";
 import hikersData from "../../temporary_data/hikers.json";
 import reviewsData from "../../temporary_data/reviews.json";
@@ -17,18 +17,16 @@ type ReviewUI = {
   title: string;
   comment: string;
   author: string;
+  trailName: string;
   photoUrl?: string;
 };
 
-// Select target trail (e.g., Lake Agnes)
-const targetTrailName = "Lake Agnes - Mirror Lake - Lake Louise";
-const currentHike = hikesData.find((h) => h.name === targetTrailName) || hikesData[0];
-
-// Join reviews with hiker details and map fields
+// Map ALL reviews across all trails and take only the first 8
 const formattedReviews: ReviewUI[] = reviewsData
-  .filter((r) => r.hikeId === currentHike.id)
-  .map((r, index) => {
+  .slice(0, 8) // Takes the first 8 reviews regardless of trail
+  .map((r) => {
     const hiker = hikersData.find((h) => h.id === r.hikerId);
+    const hike = hikesData.find((h) => h.id === r.hikeId);
     
     const conditionMap: Record<string, "good" | "neutral" | "bad"> = {
       good: "good",
@@ -44,6 +42,7 @@ const formattedReviews: ReviewUI[] = reviewsData
       title: r.title, 
       comment: r.comments,
       author: hiker ? hiker.email.split("@")[0] : "Anonymous Hiker",
+      trailName: hike ? hike.name : "Unknown Trail",
       photoUrl: r.photo,
     };
   });
@@ -140,7 +139,7 @@ function ReviewCard({ review }: { review: ReviewUI }) {
 
             <div>
               <p className="text-small font-medium text-text capitalize">
-                {review.author}
+                {review.author} · <span className="font-normal text-text-subtle">{review.trailName}</span>
               </p>
             </div>
           </div>
@@ -161,17 +160,12 @@ export default function ReviewsPage() {
       <Navbar user={{ email: "hshar360" }} />
 
       <main className="flex-1 px-4 py-10 md:px-16">
-        {/* Trail heading */}
+        {/* Section Heading */}
         <section className="mb-10 flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <div>
             <h1 className="text-title font-semibold text-ink">
-              {currentHike.name}
+              Latest Reviews
             </h1>
-
-            <p className="mt-2 text-heading font-semibold text-ink">
-              ★ {currentHike.rating} ({formattedReviews.length} reviews) ·{" "}
-              {currentHike.length} km · {currentHike.difficulty}
-            </p>
           </div>
 
           {/* Leave review button */}
@@ -197,7 +191,7 @@ export default function ReviewsPage() {
               <ReviewCard key={review.id} review={review} />
             ))
           ) : (
-            <p className="text-text-subtle">No reviews submitted for this trail yet.</p>
+            <p className="text-text-subtle">No reviews submitted yet.</p>
           )}
         </section>
       </main>

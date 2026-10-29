@@ -33,7 +33,7 @@ describe("Navbar", () => {
     );
     expect(screen.getByRole("link", { name: "Trails" })).toHaveAttribute(
       "href",
-      "/trails",
+      "/",
     );
     expect(screen.getByRole("link", { name: "Reviews" })).toHaveClass(
       "text-primary",
