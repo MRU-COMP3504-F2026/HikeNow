@@ -25,13 +25,10 @@ interface PageProps {
 }
 
 export async function generateStaticParams() {
-  const reviews = await fetch('https://api.example.com/reviews').then((res) => res.json());
-
-  return reviews.map((review: ReviewUI) => ({
-    id: review.id.toString(),
+  return hikesData.map((hike) => ({
+    id: hike.id.toString(),
   }));
 }
-
 function ConditionIcons({ selected }: { selected: ReviewUI["condition"] }) {
   const conditions = [
     { key: "good", mouth: "M8 14s1.5 2 4 2 4-2 4-2" },
