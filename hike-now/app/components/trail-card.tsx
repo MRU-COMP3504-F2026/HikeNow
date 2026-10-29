@@ -2,21 +2,13 @@ import Link from "next/link";
 import { StarIcon } from "./star-rating";
 
 export type TrailCardProps = {
-  /** Nombre del sendero, p. ej. "Johnston Canyon". */
   name: string;
-  /** Ubicación, p. ej. "Alberta, Canada". Se muestra tras el nombre. */
   location?: string;
-  /** URL de la foto principal. */
   imageUrl: string;
-  /** Crédito de la foto, p. ej. { author: "Jess Snoek", source: "Unsplash" }. */
-  photoCredit?: { author: string; source: string; authorHref?: string; sourceHref?: string };
-  /** Nota media (0 a 5). */
+  photoCredit?: { author: string; source: string; authorHref: string; sourceHref: string };
   rating: number;
-  /** Longitud en km. */
   lengthKm: number;
-  /** Dificultad, p. ej. "Easy", "Moderate". */
   difficulty: string;
-  /** Página de detalle del sendero. */
   href: string;
   className?: string;
 };
@@ -60,8 +52,12 @@ export default function TrailCard({
       {photoCredit && (
         <p className="-mt-1 text-small text-text-subtle">
           Photo from{" "}
-          <span className="underline">{photoCredit.author}</span> in{" "}
-          <span className="underline">{photoCredit.source}</span>
+          <a href={photoCredit.authorHref} target="blank">
+            <span className="underline">{photoCredit.author}</span> in{" "}
+          </a>
+          <a href={photoCredit.sourceHref} target="blank">
+            <span className="underline">{photoCredit.source}</span>
+          </a>
         </p>
       )}
 

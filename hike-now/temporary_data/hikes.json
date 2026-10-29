@@ -8,6 +8,13 @@
     "equipment": "helmet, hiking sticks, flashlight",
     "location": "Alberta, Canada",
     "rating": 4.5,
+    "photo": "https://images.unsplash.com/photo-1533587032585-7c78bbeef622?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D",
+    "photo_credit": {
+      "author": "Jess Snoek",  
+      "source": "Unsplash", 
+      "authorHref": "https://unsplash.com/es/@jess_snoek?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText",
+      "sourceHref": "https://unsplash.com/es/fotos/cascadas-cerca-de-los-arboles-vQJ8N4HW6OI?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText"
+    },
     "landmarks": "Lower Falls, Upper Falls"
   },
   {
@@ -19,6 +26,13 @@
     "equipment": "boots, flashlight, hiking sticks",
     "location": "Alberta, Canada",
     "rating": 4.7,
+    "photo": "https://images.unsplash.com/photo-1596570630516-7c7355b14a55?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D",
+    "photo_credit": {
+      "author": "Eelco Böhtlingk",  
+      "source": "Unsplash", 
+      "authorHref": "https://unsplash.com/es/@eelco_bohtlingk?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText",
+      "sourceHref": "https://unsplash.com/es/fotos/montana-cubierta-de-nieve-bajo-el-cielo-nublado-durante-el-dia-gt5gIXxvdU0?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText"
+    },
     "landmarks": "Gargoyle Valley Overlook"
   },
   {
@@ -30,6 +44,13 @@
     "equipment": "hiking sticks, helmet",
     "location": "Alberta, Canada",
     "rating": 4.3,
+    "photo": "https://s0.wklcdn.com/image_43/1313891/48166025/32325573Master.jpg",
+    "photo_credit": {
+      "author": "Jokinlpz",  
+      "source": "wikiloc", 
+      "authorHref": "https://www.wikiloc.com/wikiloc/user.do?id=1313891",
+      "sourceHref": "https://www.wikiloc.com/hiking-trails/circular-por-old-fort-point-48166025/photo-32325573"
+    },
     "landmarks": "Athabasca River Viewpoint"
   },
   {
@@ -41,6 +62,13 @@
     "equipment": "helmet, jacket",
     "location": "British Columbia, Canada",
     "rating": 4.8,
+    "photo": "https://images.unsplash.com/photo-1599164878268-160a62fabc52?q=80&w=1032&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D",
+    "photo_credit": {
+      "author": "Rohit D'Silva",  
+      "source": "Unsplash", 
+      "authorHref": "https://unsplash.com/es/@rohitdsilva?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText",
+      "sourceHref": "https://unsplash.com/es/fotos/arboles-verdes-cerca-del-lago-bajo-el-cielo-azul-durante-el-dia-wYVy2GZrLmY?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText"
+    },
     "landmarks": "Ensign Creek Crossing, Yoho Lake"
   },
   {
@@ -52,6 +80,13 @@
     "equipment": "helmet, boots, hat",
     "location": "Alberta, Canada",
     "rating": 4.2,
+    "photo": "https://images.unsplash.com/photo-1632335501275-519aca0eea0f?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D",
+    "photo_credit": {
+      "author": "Philip Ho",  
+      "source": "Unsplash", 
+      "authorHref": "https://unsplash.com/es/@philsbury?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText",
+      "sourceHref": "https://unsplash.com/es/fotos/un-lago-azul-rodeado-de-montanas-bajo-un-cielo-nublado-YnRYLdh-BMg?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText"
+    },
     "landmarks": "Lake Agnes Tea House, Mirror Lake"
   },
   {
@@ -63,6 +98,13 @@
     "equipment": "boots, hat, helmet, hiking sticks",
     "location": "Alberta, Canada",
     "rating": 4.4,
+    "photo": "https://images.unsplash.com/photo-1638329235169-ce0ff067fdc3?q=80&w=873&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D",
+    "photo_credit": {
+      "author": "Delphine Beausoleil",  
+      "source": "Unsplash", 
+      "authorHref": "https://unsplash.com/es/@dbeausoleil?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText",
+      "sourceHref": "https://unsplash.com/es/fotos/un-rio-que-atraviesa-un-bosque-lleno-de-rocas-HTiGepuS4g8?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText"
+    },
     "landmarks": "Fifth Bridge, Canyon Gorge"
   },
   {
@@ -74,6 +116,13 @@
     "equipment": "helmet, boots, flashlight",
     "location": "British Columbia, Canada",
     "rating": 4.1,
+    "photo": "https://s2.wklcdn.com/image_0/4861/18657/9218Master.jpg",
+    "photo_credit": {
+      "author": "alpmeadow",  
+      "source": "wikiloc", 
+      "authorHref": "https://www.wikiloc.com/wikiloc/user.do?id=4861",
+      "sourceHref": "https://www.wikiloc.com/hiking-trails/elk-trail-18657/photo-9218"
+    },
     "landmarks": "Elk River Overlook"
   },
   {
@@ -85,6 +134,13 @@
     "equipment": "jacket, flashlight",
     "location": "Alberta, Canada",
     "rating": 4.8,
+    "photo": "https://images.unsplash.com/photo-1728985625744-36913638eeb6?q=80&w=387&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=NHwxMjA3fDA%3D",
+    "photo_credit": {
+      "author": "Luke Miller",  
+      "source": "Unsplash", 
+      "authorHref": "https://unsplash.com/es/@bylukemiller?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText",
+      "sourceHref": "https://unsplash.com/es/fotos/una-cascada-con-una-montana-al-fondo-zaYTGr9O6E4?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText"
+    },
     "landmarks": "Athabasca Falls Viewpoint"
   },
   {
@@ -96,6 +152,13 @@
     "equipment": "hiking sticks, flashlight, hat",
     "location": "Canmore, Alberta, Canada",
     "rating": 4.6,
+    "photo": "https://s0.wklcdn.com/image_253/7619706/177000749/110295558Master.jpg",
+    "photo_credit": {
+      "author": "herparadise",  
+      "source": "Wikiloc", 
+      "authorHref": "https://www.Wikiloc.com/Wikiloc/user.do?id=7619706",
+      "sourceHref": "https://www.Wikiloc.com/hiking-trails/ha-ling-peak-177000749/photo-110295558"
+    },
     "landmarks": "Ha Ling Peak Summit"
   },
   {
@@ -107,6 +170,13 @@
     "equipment": "hat, boots, helmet, jacket",
     "location": "Waterton Lakes, Alberta, Canada",
     "rating": 4.9,
+    "photo": "",
+    "photo_credit": {
+      "author": "Waterfallin",  
+      "source": "Wikiloc", 
+      "authorHref": "https://www.wikiloc.com/wikiloc/user.do?id=1237085",
+      "sourceHref": "https://www.wikiloc.com/hiking-trails/crypt-lake-trail-41732018/photo-27156169"
+    },
     "landmarks": "Crypt Lake Waterfall & Tunnel"
   }
 ]
