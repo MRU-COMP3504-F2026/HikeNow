@@ -175,7 +175,7 @@ export default function ReviewsPage() {
           >
             <span>Leave a review</span>
 
-            <span className="flex size-9 items-center justify-center rounded-full border-2 border-primary text-2xl leading-none">
+            <span className="flex size-8 items-center justify-center rounded-full border-2 border-primary leading-none pb-[1.5px]">
               +
             </span>
           </button>
