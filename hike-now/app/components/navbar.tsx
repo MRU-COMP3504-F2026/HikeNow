@@ -38,7 +38,7 @@ export default function Navbar({ user = null }: NavbarProps) {
   };
 
   return (
-    <header className="bg-background">
+    <header className="bg-background sticky top-0">
       <div className="flex h-23 items-center gap-4 px-4 md:px-16">
         <Link
           href="/"
