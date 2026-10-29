@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { CloseIcon, MenuIcon, SearchIcon, UserIcon } from "./icons";
 import { navLinks } from "./nav-links";
+import favicon2 from '../favicon2.ico';
 
 export type NavbarProps = {
   /** Usuario con sesión iniciada. Si es null/undefined se muestra el botón Login. */
@@ -38,7 +39,14 @@ export default function Navbar({ user = null }: NavbarProps) {
 
   return (
     <header className="bg-background">
-      <div className="flex h-23 items-center gap-6 px-4 md:px-16">
+      <div className="flex h-23 items-center gap-4 px-4 md:px-16">
+        <Link
+          href="/"
+          className="text-logo font-black leading-none text-primary"
+        >
+          <img src={favicon2.src} className="size-10">
+          </img>
+        </Link>
         <Link
           href="/"
           className="text-logo font-black leading-none text-primary"
