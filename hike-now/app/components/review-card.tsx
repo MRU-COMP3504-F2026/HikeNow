@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ComponentType } from "react";
 import { MehIcon, MountainIcon, SadIcon, SmileIcon } from "./icons";
 import StarRating from "./star-rating";
@@ -16,12 +17,16 @@ export type ReviewCardProps = {
   title?: string;
   /** Comentario. */
   comments?: string;
-  /** Nombre de quien escribió la review. */
-  author: string;
+  /** Nombre de quien escribió la review. Si falta no se muestra el autor. */
+  author?: string;
+  /** Nombre del sendero. Se muestra encima del título (útil en el perfil). */
+  trailName?: string;
+  /** Enlace del sendero. Si se pasa, trailName es un enlace. */
+  trailHref?: string;
   /** URL del avatar. Si falta se muestra la inicial. */
   avatarUrl?: string;
-  /** Fecha de la review. */
-  date: Date | string;
+  /** Fecha de la review. Si falta no se muestra. */
+  date?: Date | string;
   /** Fotos de la review (se muestran hasta 2). */
   photos?: string[];
   className?: string;
@@ -49,6 +54,8 @@ export default function ReviewCard({
   title,
   comments,
   author,
+  trailName,
+  trailHref,
   avatarUrl,
   date,
   photos = [],
@@ -90,26 +97,38 @@ export default function ReviewCard({
           )}
         </div>
 
+        {trailName &&
+          (trailHref ? (
+            <Link href={trailHref} className="text-small font-medium text-primary underline-offset-2 hover:underline">
+              {trailName}
+            </Link>
+          ) : (
+            <span className="text-small font-medium text-primary">{trailName}</span>
+          ))}
         {title && <h3 className="text-nav font-medium text-ink">{title}</h3>}
         {comments && <p className="text-small text-text">{comments}</p>}
 
-        <div className="mt-2 flex items-center gap-2">
-          {avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={avatarUrl} alt="" className="size-6 rounded-full object-cover" />
-          ) : (
-            <span
-              aria-hidden="true"
-              className="grid size-6 place-items-center rounded-full bg-primary text-[10px] text-on-primary"
-            >
-              {author.charAt(0).toUpperCase()}
-            </span>
-          )}
-          <div className="flex flex-col text-[10px] leading-tight text-text-subtle">
-            <span>{author}</span>
-            <time dateTime={new Date(date).toISOString()}>{formatDate(date)}</time>
+        {(author || date) && (
+          <div className="mt-2 flex items-center gap-2">
+            {avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={avatarUrl} alt="" className="size-6 rounded-full object-cover" />
+            ) : (
+              <span
+                aria-hidden="true"
+                className="grid size-6 place-items-center rounded-full bg-primary text-[10px] text-on-primary"
+              >
+                {author?.charAt(0).toUpperCase()}
+              </span>
+            )}
+            <div className="flex flex-col text-[10px] leading-tight text-text-subtle">
+              <span>{author}</span>
+              {date && (
+                <time dateTime={new Date(date).toISOString()}>{formatDate(date)}</time>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {shownPhotos.length > 0 && (
