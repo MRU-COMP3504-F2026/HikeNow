@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Footer from "../../components/footer";
 import { UserIcon } from "../../components/icons";
 import Navbar from "../../components/navbar";
@@ -188,8 +189,8 @@ export default async function ReviewsPage({ params }: PageProps) {
           </div>
 
           {/* Leave review button */}
-          <button
-            type="button"
+          <Link
+            href={`/reviews/${currentHike.id}/new`}
             className="flex cursor-pointer items-center gap-3 self-start text-heading text-primary transition-opacity hover:opacity-80"
           >
             <span>Leave a review</span>
@@ -197,7 +198,7 @@ export default async function ReviewsPage({ params }: PageProps) {
             <span className="flex size-8 items-center justify-center rounded-full border-2 border-primary leading-none pb-[1.5px]">
               +
             </span>
-          </button>
+          </Link>
         </section>
 
         {/* Reviews list - rendered only if review.hikeId matches target trail ID */}
