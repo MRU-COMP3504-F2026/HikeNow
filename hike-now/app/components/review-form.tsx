@@ -8,6 +8,7 @@ import Modal from "./modal";
 import StarRating from "./star-rating";
 import Tag from "./tag";
 import TagPicker from "./tag-picker";
+import { saveReviewToFile } from "../actions/reviews";
 
 export type ReviewFormTrail = {
   id: string;
@@ -60,6 +61,7 @@ export default function ReviewForm({ trails, initialTrailId }: ReviewFormProps) 
   const router = useRouter();
   const fileInput = useRef<HTMLInputElement>(null);
 
+  const [title, setTitle] = useState("");
   const [trailId, setTrailId] = useState(initialTrailId);
   const [tags, setTags] = useState<string[]>([]);
   const [condition, setCondition] = useState<Condition | null>(null);
@@ -110,15 +112,37 @@ export default function ReviewForm({ trails, initialTrailId }: ReviewFormProps) 
     setEquipment([]); // el equipamiento depende del trail
   }
 
-  function handleSave() {
-    if (rating === 0) {
-      setError("Please rate the trail before saving.");
-      return;
-    }
-    setError(null);
-    // TODO: guardar la review en la base de datos cuando exista la acción de servidor.
-    setSaved(true);
+ async function handleSave() {
+  if (!title.trim()) {
+    setError("Please enter a title for your review.");
+    return;
   }
+  if (rating === 0) {
+    setError("Please rate the trail before saving.");
+    return;
+  }
+  setError(null);
+
+  const newReview = {
+    id: crypto.randomUUID(), // Genera un UUID único automáticamente
+    hikeId: trailId,
+    hikerId: "900191a2-eaa2-411f-a35e-c329520f39d7", // ID del usuario actual/sesión
+    rating: rating,
+    tags: tags.join(", "), // Convierte el array ["crowded", "rocky"] en "crowded, rocky"
+    photo: photos[0]?.url || "", // Toma la primera foto o string vacío si no subió ninguna
+    condition: condition ?? "good",
+    comments: comments,
+    title: title,
+  };
+
+  const result = await saveReviewToFile(newReview);
+
+  if (result.success) {
+    setSaved(true);
+  } else {
+    setError("Failed to save review.");
+  }
+}
 
   function goBack() {
     router.push(`/reviews/${trail.id}`);
@@ -135,7 +159,22 @@ export default function ReviewForm({ trails, initialTrailId }: ReviewFormProps) 
         className="grid gap-10 lg:grid-cols-[1fr_minmax(0,28rem)]"
       >
         <div className="flex flex-col gap-6">
-          {/* Fila 1: trail + tags */}
+          {/* Section 1: Title */}
+          <div className="flex flex-col gap-2">
+            <label htmlFor="title" className={labelClasses}>
+              Title <span className="text-danger">*</span>
+            </label>
+            <input
+              id="title"
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Give your review a title"
+              className="rounded-control border border-field-border bg-background px-3 py-2 text-small text-text placeholder:text-placeholder focus-visible:outline-2 focus-visible:outline-primary"
+            />
+          </div>
+
+          {/* Section 2: Trail + Tags */}
           <div className="grid gap-6 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
               <label htmlFor="trail" className={labelClasses}>
@@ -168,7 +207,7 @@ export default function ReviewForm({ trails, initialTrailId }: ReviewFormProps) 
             </div>
           </div>
 
-          {/* Fila 2: condición, rating, equipment */}
+          {/* Section 3: Condition, Rating, Equipment */}
           <div className="grid gap-6 sm:grid-cols-[auto_auto_1fr] sm:gap-10">
             <fieldset className="flex flex-col gap-2">
               <legend className={labelClasses}>Current Condition</legend>
@@ -217,7 +256,7 @@ export default function ReviewForm({ trails, initialTrailId }: ReviewFormProps) 
             </div>
           </div>
 
-          {/* Fotos */}
+          {/* Section 4: Photos */}
           <div className="flex flex-col gap-2">
             <span className={labelClasses}>Photos</span>
             <div className="flex flex-wrap gap-5">
@@ -268,7 +307,7 @@ export default function ReviewForm({ trails, initialTrailId }: ReviewFormProps) 
             />
           </div>
 
-          {/* Comentarios */}
+          {/* Section 5: Comments */}
           <div className="flex flex-col gap-2">
             <label htmlFor="comments" className={labelClasses}>
               Comments
@@ -303,7 +342,7 @@ export default function ReviewForm({ trails, initialTrailId }: ReviewFormProps) 
           </div>
         </div>
 
-        {/* Foto del trail */}
+        {/* Trail Image */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={trail.photo}
