@@ -5,27 +5,34 @@ import path from "path";
 
 export async function saveReviewToFile(newReview: Record<string, unknown>) {
   try {
-    // process.cwd() obtiene la ruta absoluta del directorio raíz de tu proyecto
-    const filePath = path.join(process.cwd(), "temporary_data", "reviews.json");
-    // (O usa path.join(process.cwd(), "..", "temporary_data", "reviews.json") si está fuera de la raíz)
+    // Ruta en la carpeta temporal de servidor (escribible)
+    const tmpPath = path.join("/tmp", "reviews.json");
+    
+    // Ruta del archivo original con los datos sembrados (seed)
+    const seedPath = path.join(process.cwd(), "temporary_data", "reviews.json");
 
-    const dirPath = path.dirname(filePath);
-
-    // 1. Asegurar que la carpeta exista antes de escribir
-    await fs.mkdir(dirPath, { recursive: true });
-
-    // 2. Leer las reseñas existentes
     let reviews = [];
+
     try {
-      const fileData = await fs.readFile(filePath, "utf-8");
+      // 1. Intentar leer el archivo guardado previamente en /tmp
+      const fileData = await fs.readFile(tmpPath, "utf-8");
       reviews = JSON.parse(fileData);
     } catch {
-      reviews = [];
+      // 2. Si /tmp/reviews.json aún no existe, clonamos los datos del original
+      try {
+        const seedData = await fs.readFile(seedPath, "utf-8");
+        reviews = JSON.parse(seedData);
+      } catch {
+        // Si el original tampoco existe, iniciamos array vacío
+        reviews = [];
+      }
     }
 
-    // 3. Agregar y guardar
+    // 3. Agregar la nueva reseña al conjunto existente
     reviews.push(newReview);
-    await fs.writeFile(filePath, JSON.stringify(reviews, null, 2), "utf-8");
+
+    // 4. Guardar el archivo actualizado en /tmp
+    await fs.writeFile(tmpPath, JSON.stringify(reviews, null, 2), "utf-8");
 
     return { success: true };
   } catch (error) {
