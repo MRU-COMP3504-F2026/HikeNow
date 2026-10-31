@@ -6,7 +6,7 @@ import path from "path";
 export async function saveReviewToFile(reviewData: Record<string, unknown>) {
   try {
     // Apunta a la ruta ../temporary_data/reviews.json relativa a la raíz del proyecto
-    const filePath = path.join(process.cwd(), "..", "temporary_data", "reviews.json");
+    const filePath = path.join("@", "temporary_data", "reviews.json");
 
     // 1. Leer las reseñas existentes si el archivo ya existe
     let reviews = [];
