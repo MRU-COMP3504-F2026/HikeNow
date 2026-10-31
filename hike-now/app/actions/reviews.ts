@@ -33,7 +33,10 @@ export async function saveReviewToFile(newReview: Record<string, unknown>) {
 
     // 4. Guardar el archivo actualizado en /tmp
     await fs.writeFile(tmpPath, JSON.stringify(reviews, null, 2), "utf-8");
-
+    // Al final de saveReviewToFile, justo antes de return { success: true }:
+    const savedContent = await fs.readFile(tmpPath, "utf-8");
+    console.log("--- CONTENIDO ACTUAL EN /tmp/reviews.json ---");
+    console.log(savedContent);
     return { success: true };
   } catch (error) {
     console.error("Error writing to JSON file:", error);
