@@ -109,11 +109,16 @@ export const hike = pgTable(
     name: varchar("name", { length: 255 }).notNull(),
     description: text("description"),
     difficulty: varchar("difficulty", { length: 50 }),
-    length: decimal("length", { precision: 10, scale: 2 }), 
+    length: decimal("length", { precision: 10, scale: 2 }),
     equipment: text("equipment"),
     location: varchar("location", { length: 255 }),
     rating: decimal("rating", { precision: 3, scale: 2 }),
     landmarks: text("landmarks"),
+    photo: text("photo"),
+    photoCreditAuthor: varchar("photo_credit_author", { length: 255 }),
+    photoCreditSource: varchar("photo_credit_source", { length: 255 }),
+    photoCreditAuthorHref: text("photo_credit_author_href"),
+    photoCreditSourceHref: text("photo_credit_source_href"),
   },
   (table) => [
     pgPolicy("Hikes are viewable by everyone", {

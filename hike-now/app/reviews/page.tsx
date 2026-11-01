@@ -5,10 +5,10 @@ import Navbar from "../components/navbar";
 import StarRating from "../components/star-rating";
 import Tag from "../components/tag";
 
-// Import raw JSON data files
-import hikesData from "../../temporary_data/hikes.json";
-import hikersData from "../../temporary_data/hikers.json";
-import reviewsData from "../../temporary_data/reviews.json";
+// Import the Server Actions created previously
+import { getReviews } from "../actions/reviews";
+import { getHikers } from "../actions/hikers";
+import { getHikes } from "../actions/hikes";
 
 type ReviewUI = {
   id: string;
@@ -21,32 +21,6 @@ type ReviewUI = {
   trailName: string;
   photoUrl?: string;
 };
-
-// Map ALL reviews across all trails and take only the first 8
-const formattedReviews: ReviewUI[] = reviewsData
-  .slice(0, 8) // Takes the first 8 reviews regardless of trail
-  .map((r) => {
-    const hiker = hikersData.find((h) => h.id === r.hikerId);
-    const hike = hikesData.find((h) => h.id === r.hikeId);
-    
-    const conditionMap: Record<string, "good" | "neutral" | "bad"> = {
-      good: "good",
-      mild: "neutral",
-      bad: "bad",
-    };
-
-    return {
-      id: r.id,
-      rating: Math.round(Number(r.rating)),
-      condition: conditionMap[r.condition] || "good",
-      tags: r.tags ? r.tags.split(", ").map((t) => t.trim()) : [],
-      title: r.title, 
-      comment: r.comments,
-      author: hiker ? hiker.email.split("@")[0] : "Anonymous Hiker",
-      trailName: hike ? hike.name : "Unknown Trail",
-      photoUrl: r.photo,
-    };
-  });
 
 function ConditionIcons({ selected }: { selected: ReviewUI["condition"] }) {
   const conditions = [
@@ -139,23 +113,68 @@ function ReviewCard({ review }: { review: ReviewUI }) {
             </span>
 
             <div>
-              <p className="text-small font-medium text-text capitalize">
-                {review.author} · <span className="font-normal text-text-subtle">{review.trailName}</span>
+              <p className="text-small font-medium capitalize text-text">
+                {review.author} ·{" "}
+                <span className="font-normal text-text-subtle">
+                  {review.trailName}
+                </span>
               </p>
             </div>
           </div>
         </div>
 
-        {/* Review photos */}
+        {/* Review photo from Supabase Storage or Fallback Placeholder */}
         <div className="flex gap-4">
-          <PhotoPlaceholder />
+          {review.photoUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={review.photoUrl}
+              alt={review.title}
+              className="h-28 w-28 shrink-0 rounded-lg object-cover md:h-32 md:w-32"
+            />
+          ) : (
+            <PhotoPlaceholder />
+          )}
         </div>
       </div>
     </article>
   );
 }
 
-export default function ReviewsPage() {
+export default async function ReviewsPage() {
+  // Fetch database records concurrently using the server actions
+  const [reviewsData, hikersData, hikesData] = await Promise.all([
+    getReviews(),
+    getHikers(),
+    getHikes(),
+  ]);
+
+  const conditionMap: Record<string, "good" | "neutral" | "bad"> = {
+    good: "good",
+    mild: "neutral",
+    bad: "bad",
+  };
+
+  // Map database entity schema to UI structure
+  const formattedReviews: ReviewUI[] = reviewsData
+    .slice(0, 8)
+    .map((r) => {
+      const hiker = hikersData.find((h) => h.id === r.hikerId);
+      const hike = hikesData.find((h) => h.id === r.hikeId);
+
+      return {
+        id: r.id,
+        rating: Math.round(Number(r.rating ?? 0)),
+        condition: conditionMap[r.condition ?? ""] || "good",
+        tags: r.tags ? r.tags.split(", ").map((t) => t.trim()) : [],
+        title: r.title ?? "Untitled Review",
+        comment: r.comments ?? "",
+        author: hiker ? hiker.email.split("@")[0] : "Anonymous Hiker",
+        trailName: hike ? hike.name : "Unknown Trail",
+        photoUrl: r.photo ?? undefined,
+      };
+    });
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Navbar user={{ email: "hshar360" }} />
@@ -176,7 +195,7 @@ export default function ReviewsPage() {
           >
             <span>Leave a review</span>
 
-            <span className="flex size-8 items-center justify-center rounded-full border-2 border-primary leading-none pb-[1.5px]">
+            <span className="flex size-8 items-center justify-center rounded-full border-2 border-primary pb-[1.5px] leading-none">
               +
             </span>
           </Link>
