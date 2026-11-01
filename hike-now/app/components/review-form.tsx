@@ -8,7 +8,7 @@ import Modal from "./modal";
 import StarRating from "./star-rating";
 import Tag from "./tag";
 import TagPicker from "./tag-picker";
-import { saveReviewToFile } from "../actions/reviews";
+import { createReview } from "../actions/reviews";
 
 export type ReviewFormTrail = {
   id: string;
@@ -112,7 +112,7 @@ export default function ReviewForm({ trails, initialTrailId }: ReviewFormProps) 
     setEquipment([]); // el equipamiento depende del trail
   }
 
- async function handleSave() {
+async function handleSave() {
   if (!title.trim()) {
     setError("Please enter a title for your review.");
     return;
@@ -123,27 +123,29 @@ export default function ReviewForm({ trails, initialTrailId }: ReviewFormProps) 
   }
   setError(null);
 
-  const newReview = {
-    id: crypto.randomUUID(), // Genera un UUID único automáticamente
-    hikeId: trailId,
-    hikerId: "900191a2-eaa2-411f-a35e-c329520f39d7", // ID del usuario actual/sesión
-    rating: rating,
-    tags: tags.join(", "), // Convierte el array ["crowded", "rocky"] en "crowded, rocky"
-    photo: photos[0]?.url || "", // Toma la primera foto o string vacío si no subió ninguna
-    condition: condition ?? "good",
-    comments: comments,
-    title: title,
-  };
+  try {
+    const formData = new FormData();
+    formData.append("hikeId", trailId);
+    formData.append("hikerId", "e7a7ba1b-1bf9-4595-becd-6a94689fa60d");
+    formData.append("rating", rating.toString());
+    formData.append("tags", tags.join(", "));
+    formData.append("condition", condition ?? "good");
+    formData.append("comments", comments);
+    formData.append("title", title);
 
-  const result = await saveReviewToFile(newReview);
+    // Pass the actual binary File object from state so Supabase Storage receives it
+    if (photos[0]?.file) {
+      formData.append("photo", photos[0].file);
+    }
 
-  if (result.success) {
+    // Call your existing Server Action directly
+    await createReview(formData);
+
     setSaved(true);
-  } else {
-    setError("Failed to save review.");
+  } catch (err: any) {
+    setError(err.message || "Failed to save review.");
   }
 }
-
   function goBack() {
     router.push(`/reviews/${trail.id}`);
   }

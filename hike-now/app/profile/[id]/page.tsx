@@ -4,10 +4,10 @@ import Navbar from "../../components/navbar";
 import ReviewCard, { type ReviewCondition } from "../../components/review-card";
 import UserProfile from "../../components/user-profile";
 
-// Datos temporales hasta conectar la base de datos
-import hikesData from "../../../temporary_data/hikes.json";
-import hikersData from "../../../temporary_data/hikers.json";
-import reviewsData from "../../../temporary_data/reviews.json";
+// Import Server Actions
+import { getHikers } from "../../actions/hikers";
+import { getReviews } from "../../actions/reviews";
+import { getHikes } from "../../actions/hikes";
 
 interface PageProps {
   params: Promise<{ id: string }> | { id: string };
@@ -19,30 +19,41 @@ const conditionMap: Record<string, ReviewCondition> = {
   bad: "poor",
 };
 
+// Dynamically generate static params from PostgreSQL hikers
 export async function generateStaticParams() {
-  return hikersData.map((hiker) => ({ id: hiker.id }));
+  const hikers = await getHikers();
+  return hikers.map((hiker) => ({ id: hiker.id }));
 }
 
 export default async function ProfilePage({ params }: PageProps) {
   const { id } = await params;
-  const hiker = hikersData.find((h) => h.id === id);
+
+  // Fetch all required data concurrently from PostgreSQL
+  const [hikers, reviewsData, hikesData] = await Promise.all([
+    getHikers(),
+    getReviews(),
+    getHikes(),
+  ]);
+
+  const hiker = hikers.find((h) => h.id === id);
   if (!hiker) notFound();
 
   const name = hiker.email.split("@")[0];
   const displayName = name.charAt(0).toUpperCase() + name.slice(1);
 
+  // Filter reviews written by this hiker
   const reviews = reviewsData
     .filter((r) => r.hikerId === hiker.id)
     .map((r) => {
       const hike = hikesData.find((h) => h.id === r.hikeId);
       return {
         id: r.id,
-        rating: Math.round(Number(r.rating)),
-        condition: conditionMap[r.condition] ?? "good",
+        rating: Math.round(Number(r.rating ?? 0)),
+        condition: conditionMap[r.condition ?? ""] ?? "good",
         tags: r.tags ? r.tags.split(", ").map((t) => t.trim()) : [],
-        title: r.title,
-        comments: r.comments,
-        photo: r.photo,
+        title: r.title ?? "Untitled Review",
+        comments: r.comments ?? "",
+        photo: r.photo ?? null,
         trailName: hike?.name ?? "Unknown trail",
         trailHref: hike ? `/reviews/${hike.id}` : undefined,
         hikeId: r.hikeId,
@@ -59,7 +70,7 @@ export default async function ProfilePage({ params }: PageProps) {
         <UserProfile
           name={displayName}
           email={hiker.email}
-          description={hiker.description}
+          description={hiker.description ?? undefined}
           stats={[
             { label: "Reviews", value: reviews.length },
             { label: "Trails reviewed", value: trailsReviewed },
