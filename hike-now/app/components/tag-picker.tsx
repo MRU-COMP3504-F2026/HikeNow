@@ -12,6 +12,11 @@ export type TagPickerProps = {
   /** Título del panel. */
   title?: string;
   className?: string;
+
+  /** Maximum number of tags that can be selected. */
+  maxSelected?: number;
+
+
 };
 
 /** Panel verde "Add some tags to your review": buscador + rejilla de tags seleccionables. */
@@ -20,6 +25,7 @@ export default function TagPicker({
   selected,
   onChange,
   title = "Add some tags to your review",
+  maxSelected,
   className = "",
 }: TagPickerProps) {
   const [query, setQuery] = useState("");
@@ -28,12 +34,18 @@ export default function TagPicker({
     o.toLowerCase().includes(query.trim().toLowerCase()),
   );
 
-  const toggle = (tag: string) =>
-    onChange(
-      selected.includes(tag)
-        ? selected.filter((t) => t !== tag)
-        : [...selected, tag],
-    );
+  const toggle = (tag: string) => {
+  if (selected.includes(tag)) {
+    onChange(selected.filter((t) => t !== tag));
+    return;
+  }
+
+  if (maxSelected !== undefined && selected.length >= maxSelected) {
+    return;
+  }
+
+  onChange([...selected, tag]);
+};
 
   return (
     <div
