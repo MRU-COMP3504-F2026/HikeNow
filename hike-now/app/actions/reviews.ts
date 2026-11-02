@@ -79,8 +79,9 @@ export async function createReview(formData: FormData) {
     revalidatePath("/reviews");
 
     return { success: true, data: newReview };
-  } catch (error: any) {
-    return { success: false, error: error.message };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "An unknown error occurred";
+    return { success: false, error: message };
   }
 }
 
@@ -95,8 +96,13 @@ export async function updateReview(id: string, formData: FormData) {
   const title = formData.get("title") as string;
   const photoFile = formData.get("photo") as File | null;
 
-  let updateFields: Record<string, any> = { rating, tags, condition, comments, title };
-
+  const updateFields: Record<string, string | null | undefined> = {
+    rating,
+    tags,
+    condition,
+    comments,
+    title,
+  };
   if (photoFile && photoFile.size > 0) {
     const fileExt = photoFile.name.split(".").pop();
     const fileName = `reviews/${Date.now()}.${fileExt}`;

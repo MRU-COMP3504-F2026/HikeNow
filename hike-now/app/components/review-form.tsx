@@ -142,8 +142,9 @@ async function handleSave() {
     await createReview(formData);
 
     setSaved(true);
-  } catch (err: any) {
-    setError(err.message || "Failed to save review.");
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to save review.";
+    setError(message);
   }
 }
   function goBack() {
