@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useFollow } from "../hooks/use-follow";
 import Button from "./button";
 
 export type FollowButtonProps = {
@@ -24,21 +24,7 @@ export default function FollowButton({
   onChange,
   className = "",
 }: FollowButtonProps) {
-  const [following, setFollowing] = useState(initialFollowing);
-  const [pending, setPending] = useState(false);
-
-  async function toggle() {
-    const next = !following;
-    setFollowing(next); // actualización inmediata
-    setPending(true);
-    try {
-      await onChange?.(next);
-    } catch {
-      setFollowing(!next); // si falla, se deshace
-    } finally {
-      setPending(false);
-    }
-  }
+  const { following, pending, toggle } = useFollow({ initialFollowing, onChange });
 
   return (
     <Button
