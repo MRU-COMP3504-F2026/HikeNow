@@ -26,7 +26,18 @@ export type ReviewFormProps = {
 
 type Condition = "good" | "mild" | "bad";
 
-const TAG_OPTIONS = ["Snowy", "Rocky", "Muddy", "Clear", "Quiet", "Crowded"];
+const TAG_OPTIONS = [
+  "Snowy",
+  "Rocky",
+  "Muddy",
+  "Clear",
+  "Quiet",
+  "Crowded",
+  "Icy",
+  "Wet",
+  "Dry",
+  "Windy",
+];
 const EQUIPMENT_OPTIONS = [
   "Helmet",
   "Jacket",
@@ -372,7 +383,12 @@ export default function ReviewForm({ trails, initialTrailId }: ReviewFormProps) 
         label={picker === "tags" ? "Choose tags" : "Choose equipment"}
       >
         {picker === "tags" && (
-          <TagPicker options={TAG_OPTIONS} selected={tags} onChange={setTags} />
+          <TagPicker
+            options={TAG_OPTIONS}
+            selected={tags}
+            onChange={setTags}
+            maxSelected={3}
+          />
         )}
         {picker === "equipment" && (
           <TagPicker
