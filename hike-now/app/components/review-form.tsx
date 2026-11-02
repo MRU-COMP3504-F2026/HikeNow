@@ -147,6 +147,10 @@ async function handleSave() {
     setError("Please rate the trail before saving.");
     return;
   }
+  if (condition === null) {
+    setError("Please specify the condition of the trail before saving.");
+    return;
+  }
   setError(null);
 
   try {
