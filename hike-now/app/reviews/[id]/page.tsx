@@ -35,7 +35,9 @@ export async function generateStaticParams() {
       id: hike.id,
     }));
   } catch (error) {
-    console.warn("Skipping generateStaticParams for /reviews/[id]: Database unreachable during build.");
+    console.warn(
+      "Skipping generateStaticParams for /reviews/[id]: Database unreachable during build."
+    );
     return [];
   }
 }
@@ -180,12 +182,7 @@ function getTopTags(reviews: ReviewUI[], limit = 5): TagSummary[] {
     .slice(0, limit);
 }
 
-<<<<<<< HEAD
 async function ReviewsContent({ params }: PageProps) {
-=======
-export default async function ReviewsPage({ params }: PageProps) {
-  // 1. Resolve route parameter
->>>>>>> 6417cd6b2b54dba23cb22ff2e5d9a6b0f841fbad
   const resolvedParams = await params;
   const trailId = resolvedParams.id;
 
@@ -211,9 +208,6 @@ export default async function ReviewsPage({ params }: PageProps) {
   const formattedReviews: ReviewUI[] = reviewsData
     .filter((r) => r.hikeId === currentHike.id)
     .map((r) => {
-
-      
-      // Find corresponding hiker by ID
       const hiker = hikersData.find((h) => h.id === r.hikerId);
 
       return {
@@ -228,7 +222,6 @@ export default async function ReviewsPage({ params }: PageProps) {
       };
     });
 
-<<<<<<< HEAD
   const topTags = getTopTags(formattedReviews);
 
   return (
@@ -280,10 +273,7 @@ export default async function ReviewsPage({ params }: PageProps) {
       )}
 
       {/* Reviews list */}
-      <section
-        className="flex flex-col gap-4"
-        aria-label="Trail reviews"
-      >
+      <section className="flex flex-col gap-4" aria-label="Trail reviews">
         {formattedReviews.length > 0 ? (
           formattedReviews.map((review) => (
             <ReviewCard key={review.id} review={review} />
@@ -299,84 +289,18 @@ export default async function ReviewsPage({ params }: PageProps) {
 }
 
 export default function ReviewsPage({ params }: PageProps) {
-=======
-    const topTags = getTopTags(formattedReviews);
-
->>>>>>> 6417cd6b2b54dba23cb22ff2e5d9a6b0f841fbad
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Navbar user={{ email: "hshar360" }} />
 
       <main className="flex-1 px-4 py-10 md:px-16">
-<<<<<<< HEAD
-        <Suspense fallback={<p className="text-text-subtle">Loading trail reviews...</p>}>
+        <Suspense
+          fallback={
+            <p className="text-text-subtle">Loading trail reviews...</p>
+          }
+        >
           <ReviewsContent params={params} />
         </Suspense>
-=======
-        {/* Trail heading */}
-        <section className="mb-10 flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-          <div>
-            <h1 className="text-title font-semibold text-ink">
-              {currentHike.name}
-            </h1>
-
-            <p className="mt-2 text-heading font-semibold text-ink">
-              ★ {currentHike.rating ?? "N/A"} ({formattedReviews.length} reviews) ·{" "}
-              {currentHike.length ?? 0} km · {currentHike.difficulty ?? "N/A"}
-            </p>
-          </div>
-
-          {/* Leave review button */}
-          <Link
-            href={`/reviews/${currentHike.id}/new`}
-            className="flex cursor-pointer items-center gap-3 self-start text-heading text-primary transition-opacity hover:opacity-80"
-          >
-            <span>Leave a review</span>
-
-            <span className="flex size-8 items-center justify-center rounded-full border-2 border-primary pb-[1.5px] leading-none">
-              +
-            </span>
-          </Link>
-        </section>
-
-        {topTags.length > 0 && (
-  <section className="mb-8">
-    <h2 className="mb-3 text-heading font-semibold text-ink">
-      Trail Conditions
-    </h2>
-
-    <div className="flex flex-wrap gap-3">
-      {topTags.map(({ tag, count }) => (
-        <div
-          key={tag}
-          className="flex items-center gap-2 rounded-control border border-border bg-background px-3 py-2"
-        >
-          <Tag className="capitalize">{tag}</Tag>
-          <span className="text-small text-text-subtle">
-            {count}
-          </span>
-        </div>
-      ))}
-    </div>
-  </section>
-)}
-
-        {/* Reviews list - rendered only if review.hikeId matches target trail ID */}
-        <section
-          className="flex flex-col gap-4"
-          aria-label="Trail reviews"
-        >
-          {formattedReviews.length > 0 ? (
-            formattedReviews.map((review) => (
-              <ReviewCard key={review.id} review={review} />
-            ))
-          ) : (
-            <p className="text-text-subtle">
-              No reviews submitted for this trail yet.
-            </p>
-          )}
-        </section>
->>>>>>> 6417cd6b2b54dba23cb22ff2e5d9a6b0f841fbad
       </main>
 
       <Footer />
