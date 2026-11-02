@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import FollowButton from "../../components/follow-button";
 import Footer from "../../components/footer";
 import Navbar from "../../components/navbar";
 import ReviewCard, { type ReviewCondition } from "../../components/review-card";
@@ -25,7 +27,38 @@ export async function generateStaticParams() {
   return hikers.map((hiker) => ({ id: hiker.id }));
 }
 
-export default async function ProfilePage({ params }: PageProps) {
+// Lo que depende de la URL (`params`) y de la base de datos va dentro de
+// <Suspense>, como pide Next.js con Cache Components. Navbar y Footer salen al instante.
+export default function ProfilePage({ params }: PageProps) {
+  return (
+    <div className="flex min-h-screen flex-col bg-background">
+      <Navbar user={{ email: "hshar360" }} />
+
+      <main className="flex-1 px-4 py-10 md:px-16">
+        <Suspense fallback={<ProfileSkeleton />}>
+          <ProfileContent params={params} />
+        </Suspense>
+      </main>
+
+      <Footer />
+    </div>
+  );
+}
+
+function ProfileSkeleton() {
+  return (
+    <div role="status" aria-label="Loading profile" className="flex animate-pulse gap-6">
+      <div className="size-28 shrink-0 rounded-full bg-surface" />
+      <div className="flex flex-1 flex-col gap-3">
+        <div className="h-7 w-48 rounded-control bg-surface" />
+        <div className="h-5 w-64 rounded-control bg-surface" />
+        <div className="h-12 max-w-2xl rounded-control bg-surface" />
+      </div>
+    </div>
+  );
+}
+
+async function ProfileContent({ params }: PageProps) {
   const { id } = await params;
 
   // Fetch all required data concurrently from PostgreSQL
@@ -63,10 +96,7 @@ export default async function ProfilePage({ params }: PageProps) {
   const trailsReviewed = new Set(reviews.map((r) => r.hikeId)).size;
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <Navbar user={{ email: "hshar360" }} />
-
-      <main className="flex-1 px-4 py-10 md:px-16">
+    <>
         <UserProfile
           name={displayName}
           email={hiker.email}
@@ -75,6 +105,7 @@ export default async function ProfilePage({ params }: PageProps) {
             { label: "Reviews", value: reviews.length },
             { label: "Trails reviewed", value: trailsReviewed },
           ]}
+          action={<FollowButton name={displayName} />}
           className="mb-10"
         />
 
@@ -103,9 +134,6 @@ export default async function ProfilePage({ params }: PageProps) {
             </p>
           )}
         </section>
-      </main>
-
-      <Footer />
-    </div>
+    </>
   );
 }
