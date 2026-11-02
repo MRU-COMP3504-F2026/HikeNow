@@ -151,6 +151,30 @@ function ReviewCard({ review }: { review: ReviewUI }) {
   );
 }
 
+type TagSummary = {
+  tag: string;
+  count: number;
+};
+
+function getTopTags(reviews: ReviewUI[], limit = 5): TagSummary[] {
+  const counts = new Map<string, number>();
+
+  reviews.forEach((review) => {
+    review.tags.forEach((tag) => {
+      const normalizedTag = tag.trim().toLowerCase();
+
+      if (normalizedTag) {
+        counts.set(normalizedTag, (counts.get(normalizedTag) ?? 0) + 1);
+      }
+    });
+  });
+
+  return Array.from(counts.entries())
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag))
+    .slice(0, limit);
+}
+
 export default async function ReviewsPage({ params }: PageProps) {
   // 1. Resolve route parameter
   const resolvedParams = await params;
@@ -185,6 +209,9 @@ export default async function ReviewsPage({ params }: PageProps) {
   const formattedReviews: ReviewUI[] = reviewsData
     .filter((r) => r.hikeId === currentHike.id)
     .map((r) => {
+
+      
+      // Find corresponding hiker by ID
       const hiker = hikersData.find((h) => h.id === r.hikerId);
 
       return {
@@ -198,6 +225,8 @@ export default async function ReviewsPage({ params }: PageProps) {
         photoUrl: r.photo ?? undefined,
       };
     });
+
+    const topTags = getTopTags(formattedReviews);
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -230,7 +259,29 @@ export default async function ReviewsPage({ params }: PageProps) {
           </Link>
         </section>
 
-        {/* Reviews list */}
+        {topTags.length > 0 && (
+  <section className="mb-8">
+    <h2 className="mb-3 text-heading font-semibold text-ink">
+      Trail Conditions
+    </h2>
+
+    <div className="flex flex-wrap gap-3">
+      {topTags.map(({ tag, count }) => (
+        <div
+          key={tag}
+          className="flex items-center gap-2 rounded-control border border-border bg-background px-3 py-2"
+        >
+          <Tag className="capitalize">{tag}</Tag>
+          <span className="text-small text-text-subtle">
+            {count}
+          </span>
+        </div>
+      ))}
+    </div>
+  </section>
+)}
+
+        {/* Reviews list - rendered only if review.hikeId matches target trail ID */}
         <section
           className="flex flex-col gap-4"
           aria-label="Trail reviews"

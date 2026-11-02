@@ -26,7 +26,30 @@ export type ReviewFormProps = {
 
 type Condition = "good" | "mild" | "bad";
 
-const TAG_OPTIONS = ["Snowy", "Rocky", "Muddy", "Clear", "Quiet", "Crowded"];
+const TAG_OPTIONS = [
+  "Snowy",
+  "Rocky",
+  "Muddy",
+  "Clear",
+  "Quiet",
+  "Crowded",
+  "Icy",
+  "Wet",
+  "Dry",
+  "Windy",
+];
+const EQUIPMENT_OPTIONS = [
+  "Helmet",
+  "Jacket",
+  "Hiking Sticks",
+  "Hat",
+  "Boots",
+  "Flashlight",
+  "Water Bottle",
+  "First Aid Kit",
+  "Sunscreen",
+  "Backpack",
+];
 const MAX_PHOTOS = 3;
 const MAX_COMMENT = 500;
 
@@ -74,10 +97,13 @@ export default function ReviewForm({ trails, initialTrailId }: ReviewFormProps) 
   const [saved, setSaved] = useState(false);
 
   const trail = trails.find((t) => t.id === trailId) ?? trails[0];
+  /*
   const equipmentOptions = trail.equipment
     .split(",")
     .map((e) => e.trim())
     .filter(Boolean);
+
+  */
 
   // Libera las URLs temporales de las fotos al salir de la página.
   const photosRef = useRef(photos);
@@ -360,14 +386,20 @@ async function handleSave() {
         label={picker === "tags" ? "Choose tags" : "Choose equipment"}
       >
         {picker === "tags" && (
-          <TagPicker options={TAG_OPTIONS} selected={tags} onChange={setTags} />
+          <TagPicker
+            options={TAG_OPTIONS}
+            selected={tags}
+            onChange={setTags}
+            maxSelected={3}
+          />
         )}
         {picker === "equipment" && (
           <TagPicker
             title="What equipment did you use?"
-            options={equipmentOptions}
+            options={EQUIPMENT_OPTIONS}
             selected={equipment}
             onChange={setEquipment}
+            maxSelected={3}
           />
         )}
         <div className="mt-3 flex justify-center">
