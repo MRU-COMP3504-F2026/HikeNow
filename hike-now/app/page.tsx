@@ -50,7 +50,17 @@ export default async function Home() {
               key={trail.id}
               name={trail.name}
               location={trail.location ?? "Unknown location"}
-              imageUrl={trail.landmarks ?? "/images/placeholder-trail.jpg"}
+              imageUrl={trail.photo ?? "/images/placeholder-trail.jpg"}
+              photoCredit={
+                trail.photoCreditAuthor && trail.photoCreditSource
+                  ? {
+                      author: trail.photoCreditAuthor,
+                      source: trail.photoCreditSource,
+                      authorHref: trail.photoCreditAuthorHref ?? "#",
+                      sourceHref: trail.photoCreditSourceHref ?? "#",
+                    }
+                  : undefined
+              }
               rating={Number(trail.rating ?? 0)}
               lengthKm={Number(trail.length ?? 0)}
               difficulty={(trail.difficulty ?? "").replace(" Difficulty", "")}
