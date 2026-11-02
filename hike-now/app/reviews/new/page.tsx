@@ -12,7 +12,7 @@ export default async function NewReviewPage() {
   const trails = hikes.map((h) => ({
     id: h.id,
     name: h.name,
-    photo: h.landmarks ?? "/images/placeholder-trail.jpg",
+    photo: h.photo ?? "/images/placeholder-trail.jpg",
     equipment: h.equipment ?? "",
   }));
 
