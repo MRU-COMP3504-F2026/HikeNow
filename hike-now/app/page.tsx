@@ -1,9 +1,13 @@
 import Footer from "./components/footer";
 import Navbar from "./components/navbar";
 import TrailCard from "./components/trail-card";
-import hikes from "../temporary_data/hikes.json";
 
-export default function Home() {
+// Import Server Action
+import { getHikes } from "./actions/hikes";
+
+export default async function Home() {
+  // Fetch hikes from PostgreSQL
+  const hikes = await getHikes();
   const featuredTrails = hikes.slice(0, 8);
 
   return (
@@ -45,12 +49,11 @@ export default function Home() {
             <TrailCard
               key={trail.id}
               name={trail.name}
-              location={trail.location}
-              imageUrl={trail.photo}
-              photoCredit={{author: trail.photo_credit?.author, authorHref: trail.photo_credit?.authorHref, source: trail.photo_credit?.source, sourceHref: trail.photo_credit?.sourceHref}}
-              rating={trail.rating}
-              lengthKm={trail.length}
-              difficulty={trail.difficulty.replace(" Difficulty", "")}
+              location={trail.location ?? "Unknown location"}
+              imageUrl={trail.landmarks ?? "/images/placeholder-trail.jpg"}
+              rating={Number(trail.rating ?? 0)}
+              lengthKm={Number(trail.length ?? 0)}
+              difficulty={(trail.difficulty ?? "").replace(" Difficulty", "")}
               href={`/reviews/${trail.id}`}
             />
           ))}

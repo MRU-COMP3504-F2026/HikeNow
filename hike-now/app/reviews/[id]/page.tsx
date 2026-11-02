@@ -1,14 +1,16 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import Footer from "../../components/footer";
 import { UserIcon } from "../../components/icons";
 import Navbar from "../../components/navbar";
 import StarRating from "../../components/star-rating";
 import Tag from "../../components/tag";
 
-// Import raw JSON data files
-import hikesData from "../../../temporary_data/hikes.json";
-import hikersData from "../../../temporary_data/hikers.json";
-import reviewsData from "../../../temporary_data/reviews.json";
+import { getHikes, getHikeById } from "../../actions/hikes";
+import { getReviews } from "../../actions/reviews";
+import { getHikers } from "../../actions/hikers";
+
+export const instant = false;
 
 type ReviewUI = {
   id: string;
@@ -25,11 +27,21 @@ interface PageProps {
   params: Promise<{ id: string }> | { id: string };
 }
 
+// Generate static params dynamically with DB fallback for CI/CD builds
 export async function generateStaticParams() {
-  return hikesData.map((hike) => ({
-    id: hike.id.toString(),
-  }));
+  try {
+    const hikes = await getHikes();
+    return hikes.map((hike) => ({
+      id: hike.id,
+    }));
+  } catch (error) {
+    console.warn(
+      "Skipping generateStaticParams for /reviews/[id]: Database unreachable during build."
+    );
+    return [];
+  }
 }
+
 function ConditionIcons({ selected }: { selected: ReviewUI["condition"] }) {
   const conditions = [
     { key: "good", mouth: "M8 14s1.5 2 4 2 4-2 4-2" },
@@ -121,16 +133,25 @@ function ReviewCard({ review }: { review: ReviewUI }) {
             </span>
 
             <div>
-              <p className="text-small font-medium text-text capitalize">
+              <p className="text-small font-medium capitalize text-text">
                 {review.author}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Review photos */}
+        {/* Review photo */}
         <div className="flex gap-4">
-          <PhotoPlaceholder />
+          {review.photoUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={review.photoUrl}
+              alt={review.title}
+              className="h-28 w-28 shrink-0 rounded-lg object-cover md:h-32 md:w-32"
+            />
+          ) : (
+            <PhotoPlaceholder />
+          )}
         </div>
       </div>
     </article>
@@ -161,111 +182,125 @@ function getTopTags(reviews: ReviewUI[], limit = 5): TagSummary[] {
     .slice(0, limit);
 }
 
-export default async function ReviewsPage({ params }: PageProps) {
-  // Extract and resolve route parameter
+async function ReviewsContent({ params }: PageProps) {
   const resolvedParams = await params;
   const trailId = resolvedParams.id;
 
-  // 1. Check & match the hike by ID from hikes.json
-  const currentHike = hikesData.find((h) => h.id === trailId) || hikesData[0];
+  const [currentHike, rawReviews, rawHikers] = await Promise.all([
+    getHikeById(trailId),
+    getReviews(),
+    getHikers(),
+  ]);
 
-  // 2. Filter reviews strictly where review.hikeId === currentHike.id
+  const reviewsData = rawReviews ?? [];
+  const hikersData = rawHikers ?? [];
+
+  if (!currentHike) {
+    return <h1 className="text-title font-semibold text-ink">Trail not found</h1>;
+  }
+
+  const conditionMap: Record<string, "good" | "neutral" | "bad"> = {
+    good: "good",
+    mild: "neutral",
+    bad: "bad",
+  };
+
   const formattedReviews: ReviewUI[] = reviewsData
     .filter((r) => r.hikeId === currentHike.id)
     .map((r) => {
-
-      
-      // Find corresponding hiker by ID
       const hiker = hikersData.find((h) => h.id === r.hikerId);
-
-      const conditionMap: Record<string, "good" | "neutral" | "bad"> = {
-        good: "good",
-        mild: "neutral",
-        bad: "bad",
-      };
 
       return {
         id: r.id,
-        rating: Math.round(Number(r.rating)),
-        condition: conditionMap[r.condition] || "good",
+        rating: Math.round(Number(r.rating ?? 0)),
+        condition: conditionMap[r.condition ?? ""] || "good",
         tags: r.tags ? r.tags.split(", ").map((t) => t.trim()) : [],
-        title: r.title,
-        comment: r.comments,
+        title: r.title ?? "Untitled Review",
+        comment: r.comments ?? "",
         author: hiker ? hiker.email.split("@")[0] : "Anonymous Hiker",
-        photoUrl: r.photo,
+        photoUrl: r.photo ?? undefined,
       };
     });
 
-    const topTags = getTopTags(formattedReviews);
+  const topTags = getTopTags(formattedReviews);
 
+  return (
+    <>
+      {/* Trail heading */}
+      <section className="mb-10 flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h1 className="text-title font-semibold text-ink">
+            {currentHike.name}
+          </h1>
+
+          <p className="mt-2 text-heading font-semibold text-ink">
+            ★ {currentHike.rating ?? "N/A"} ({formattedReviews.length} reviews) ·{" "}
+            {currentHike.length ?? 0} km · {currentHike.difficulty ?? "N/A"}
+          </p>
+        </div>
+
+        {/* Leave review button */}
+        <Link
+          href={`/reviews/${currentHike.id}/new`}
+          className="flex cursor-pointer items-center gap-3 self-start text-heading text-primary transition-opacity hover:opacity-80"
+        >
+          <span>Leave a review</span>
+          <span className="flex size-8 items-center justify-center rounded-full border-2 border-primary pb-[1.5px] leading-none">
+            +
+          </span>
+        </Link>
+      </section>
+
+      {/* Trail Conditions */}
+      {topTags.length > 0 && (
+        <section className="mb-8">
+          <h2 className="mb-3 text-heading font-semibold text-ink">
+            Trail Conditions
+          </h2>
+
+          <div className="flex flex-wrap gap-3">
+            {topTags.map(({ tag, count }) => (
+              <div
+                key={tag}
+                className="flex items-center gap-2 rounded-control border border-border bg-background px-3 py-2"
+              >
+                <Tag className="capitalize">{tag}</Tag>
+                <span className="text-small text-text-subtle">{count}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Reviews list */}
+      <section className="flex flex-col gap-4" aria-label="Trail reviews">
+        {formattedReviews.length > 0 ? (
+          formattedReviews.map((review) => (
+            <ReviewCard key={review.id} review={review} />
+          ))
+        ) : (
+          <p className="text-text-subtle">
+            No reviews submitted for this trail yet.
+          </p>
+        )}
+      </section>
+    </>
+  );
+}
+
+export default function ReviewsPage({ params }: PageProps) {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Navbar user={{ email: "hshar360" }} />
 
       <main className="flex-1 px-4 py-10 md:px-16">
-        {/* Trail heading */}
-        <section className="mb-10 flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-          <div>
-            <h1 className="text-title font-semibold text-ink">
-              {currentHike.name}
-            </h1>
-
-            <p className="mt-2 text-heading font-semibold text-ink">
-              ★ {currentHike.rating} ({formattedReviews.length} reviews) ·{" "}
-              {currentHike.length} km · {currentHike.difficulty}
-            </p>
-          </div>
-
-          {/* Leave review button */}
-          <Link
-            href={`/reviews/${currentHike.id}/new`}
-            className="flex cursor-pointer items-center gap-3 self-start text-heading text-primary transition-opacity hover:opacity-80"
-          >
-            <span>Leave a review</span>
-
-            <span className="flex size-8 items-center justify-center rounded-full border-2 border-primary leading-none pb-[1.5px]">
-              +
-            </span>
-          </Link>
-        </section>
-
-        {topTags.length > 0 && (
-  <section className="mb-8">
-    <h2 className="mb-3 text-heading font-semibold text-ink">
-      Trail Conditions
-    </h2>
-
-    <div className="flex flex-wrap gap-3">
-      {topTags.map(({ tag, count }) => (
-        <div
-          key={tag}
-          className="flex items-center gap-2 rounded-control border border-border bg-background px-3 py-2"
+        <Suspense
+          fallback={
+            <p className="text-text-subtle">Loading trail reviews...</p>
+          }
         >
-          <Tag className="capitalize">{tag}</Tag>
-          <span className="text-small text-text-subtle">
-            {count}
-          </span>
-        </div>
-      ))}
-    </div>
-  </section>
-)}
-
-        {/* Reviews list - rendered only if review.hikeId matches target trail ID */}
-        <section
-          className="flex flex-col gap-4"
-          aria-label="Trail reviews"
-        >
-          {formattedReviews.length > 0 ? (
-            formattedReviews.map((review) => (
-              <ReviewCard key={review.id} review={review} />
-            ))
-          ) : (
-            <p className="text-text-subtle">
-              No reviews submitted for this trail yet.
-            </p>
-          )}
-        </section>
+          <ReviewsContent params={params} />
+        </Suspense>
       </main>
 
       <Footer />
