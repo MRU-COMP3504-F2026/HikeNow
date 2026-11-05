@@ -5,6 +5,7 @@ import { UserIcon } from "../../components/icons";
 import Navbar from "../../components/session-navbar";
 import StarRating from "../../components/star-rating";
 import Tag from "../../components/tag";
+import { profileHref } from "../../lib/hiker-search";
 
 import { getHikes, getHikeById } from "../../actions/hikes";
 import { getReviews } from "../../actions/reviews";
@@ -20,6 +21,7 @@ type ReviewUI = {
   title: string;
   comment: string;
   author: string;
+  authorHref?: string;
   photoUrl?: string;
 };
 
@@ -134,7 +136,13 @@ function ReviewCard({ review }: { review: ReviewUI }) {
 
             <div>
               <p className="text-small font-medium capitalize text-text">
-                {review.author}
+                {review.authorHref ? (
+                  <Link href={review.authorHref} className="hover:text-primary hover:underline">
+                    {review.author}
+                  </Link>
+                ) : (
+                  review.author
+                )}
               </p>
             </div>
           </div>
@@ -218,6 +226,7 @@ async function ReviewsContent({ params }: PageProps) {
         title: r.title ?? "Untitled Review",
         comment: r.comments ?? "",
         author: hiker ? hiker.email.split("@")[0] : "Anonymous Hiker",
+        authorHref: hiker ? profileHref(hiker.id) : undefined,
         photoUrl: r.photo ?? undefined,
       };
     });

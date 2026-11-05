@@ -9,6 +9,7 @@ import Footer from "../components/footer";
 import Navbar from "../components/session-navbar";
 import { getCurrentUser } from "@/app/lib/session";
 import Link from "next/link";
+import { profileHref } from "../lib/hiker-search";
 import ReviewCard, {
   type ReviewCondition,
 } from "../components/review-card";
@@ -87,6 +88,7 @@ async function FeedContent() {
 
       return {
         id: review.id,
+        authorHref: author ? profileHref(author.id) : undefined,
         rating: Math.round(Number(review.rating ?? 0)),
         condition: conditionMap[review.condition ?? ""] ?? "good",
         tags: review.tags
@@ -132,6 +134,7 @@ async function FeedContent() {
           title={item.title}
           comments={item.comments}
           author={item.author}
+          authorHref={item.authorHref}
           trailName={item.trailName}
           trailHref={item.trailHref}
           photos={item.photos}
