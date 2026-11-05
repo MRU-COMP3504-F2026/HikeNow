@@ -11,9 +11,16 @@ import { checkAuthRateLimit } from "@/app/lib/auth-rate-limit";
 import type { AuthResult } from "@/app/lib/auth-validation";
 
 export async function deleteAccount(password: string): Promise<AuthResult> {
+  let user: Awaited<ReturnType<typeof getCurrentUser>>;
   try {
-    const user = await getCurrentUser();
-    if (!user) return { success: false, error: "Please log in to delete your account." };
+    user = await getCurrentUser();
+  } catch (error) {
+    console.error("Account deletion failed:", error);
+    return { success: false, error: "Could not complete account deletion. Please try again later." };
+  }
+  if (!user) redirect("/login");
+
+  try {
     if (typeof password !== "string" || !password || password.length > 1024) {
       return { success: false, error: "Enter your current password to confirm deletion." };
     }

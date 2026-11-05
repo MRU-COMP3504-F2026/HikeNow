@@ -5,10 +5,12 @@ const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(), createClient: vi.fn(), insert: vi.fn(), values: vi.fn(),
   returning: vi.fn(), select: vi.fn(), where: vi.fn(), update: vi.fn(), delete: vi.fn(),
   revalidatePath: vi.fn(), revalidateTag: vi.fn(),
+  redirect: vi.fn(),
 }));
 vi.mock("@/app/db", () => ({ db: { insert: mocks.insert, select: mocks.select, update: mocks.update, delete: mocks.delete } }));
 vi.mock("@/app/lib/session", () => ({ getCurrentUser: mocks.getCurrentUser }));
 vi.mock("@/app/db/server", () => ({ createClient: mocks.createClient }));
+vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
 vi.mock("next/cache", () => ({
   unstable_cache: (callback: () => unknown) => callback,
   revalidatePath: mocks.revalidatePath, revalidateTag: mocks.revalidateTag,
@@ -63,14 +65,24 @@ describe("review ownership", () => {
     expect(JSON.parse(JSON.stringify(single))).toEqual(single);
   });
 
-  it("rejects signed-out writes before database or storage access", async () => {
+  it("redirects signed-out writes before database or storage access", async () => {
     mocks.getCurrentUser.mockResolvedValue(null);
-    expect(await createReview(form())).toEqual({ success: false, error: "Please log in to write a review." });
-    await expect(updateReview("review-id", form())).rejects.toThrow("log in");
-    await expect(deleteReview("review-id")).rejects.toThrow("log in");
+    mocks.redirect.mockImplementation(() => { throw new Error("NEXT_REDIRECT"); });
+    await expect(createReview(form())).rejects.toThrow("NEXT_REDIRECT");
+    await expect(updateReview("review-id", form())).rejects.toThrow("NEXT_REDIRECT");
+    await expect(deleteReview("review-id")).rejects.toThrow("NEXT_REDIRECT");
+    expect(mocks.redirect).toHaveBeenCalledTimes(3);
+    expect(mocks.redirect).toHaveBeenCalledWith("/login");
     expect(mocks.insert).not.toHaveBeenCalled();
     expect(mocks.select).not.toHaveBeenCalled();
     expect(mocks.createClient).not.toHaveBeenCalled();
+  });
+
+  it("reports a session lookup failure without redirecting or exposing details", async () => {
+    mocks.getCurrentUser.mockRejectedValue(new Error("private connection details"));
+    expect(await createReview(form())).toEqual({ success: false, error: "Could not save your review. Please try again later." });
+    expect(console.error).toHaveBeenCalled();
+    expect(mocks.redirect).not.toHaveBeenCalled();
   });
 
   it("rejects invalid ratings, empty titles, invalid trails, and invalid conditions", async () => {

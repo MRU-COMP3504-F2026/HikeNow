@@ -1,6 +1,7 @@
 "use client";
 
 import { useFollow } from "../hooks/use-follow";
+import { useAuthenticatedAction } from "../hooks/use-authenticated-action";
 import Button from "./button";
 
 export type FollowButtonProps = {
@@ -24,29 +25,37 @@ export default function FollowButton({
   onChange,
   className = "",
 }: FollowButtonProps) {
-  const { following, pending, toggle } = useFollow({ initialFollowing, onChange });
+  const { following, pending, error, toggle } = useFollow({ initialFollowing, onChange });
+  const auth = useAuthenticatedAction();
 
   return (
-    <Button
-      variant={following ? "outline" : "primary"}
-      aria-pressed={following}
-      aria-label={following ? `Unfollow ${name}` : `Follow ${name}`}
-      disabled={pending}
-      onClick={toggle}
-      className={[
-        "group min-w-28",
-        following ? "hover:border-danger hover:text-danger" : "",
-        className,
-      ].join(" ")}
-    >
-      {following ? (
-        <>
-          <span className="group-hover:hidden group-focus-visible:hidden">Following</span>
-          <span className="hidden group-hover:inline group-focus-visible:inline">Unfollow</span>
-        </>
-      ) : (
-        "Follow"
+    <>
+      <Button
+        variant={following ? "outline" : "primary"}
+        aria-pressed={following}
+        aria-label={following ? `Unfollow ${name}` : `Follow ${name}`}
+        disabled={pending || auth.pending}
+        onClick={() => { void auth.run(toggle); }}
+        className={[
+          "group min-w-28",
+          following ? "hover:border-danger hover:text-danger" : "",
+          className,
+        ].join(" ")}
+      >
+        {following ? (
+          <>
+            <span className="group-hover:hidden group-focus-visible:hidden">Following</span>
+            <span className="hidden group-hover:inline group-focus-visible:inline">Unfollow</span>
+          </>
+        ) : (
+          "Follow"
+        )}
+      </Button>
+      {(auth.error || error) && (
+        <p role="alert" className="mt-2 text-small text-danger">
+          {auth.error ?? "Could not update the follow status. Please try again."}
+        </p>
       )}
-    </Button>
+    </>
   );
 }

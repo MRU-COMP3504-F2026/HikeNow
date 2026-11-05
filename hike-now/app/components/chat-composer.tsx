@@ -9,9 +9,10 @@ import { AtSignIcon, CalendarIcon, SendIcon, TrailIcon } from "./icons";
 export type ChatComposerProps = {
   /** Personas que se pueden mencionar (gente con la que se hizo una ruta). */
   mentionOptions: MentionOption[];
-  onSend: (text: string) => void;
+  onSend: (text: string) => Promise<boolean>;
   onShareTrail: () => void;
   onProposeHike: () => void;
+  actionPending?: boolean;
   className?: string;
 };
 
@@ -21,11 +22,13 @@ function ToolButton({
   active,
   children,
   expanded,
+  disabled,
 }: {
   label: string;
   onClick: () => void;
   active?: boolean;
   expanded?: boolean;
+  disabled?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -34,6 +37,7 @@ function ToolButton({
       aria-label={label}
       aria-expanded={expanded}
       onClick={onClick}
+      disabled={disabled}
       className={[
         "grid size-11 shrink-0 cursor-pointer place-items-center rounded-control border text-primary transition-colors",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
@@ -51,6 +55,7 @@ export default function ChatComposer({
   onSend,
   onShareTrail,
   onProposeHike,
+  actionPending = false,
   className = "",
 }: ChatComposerProps) {
   const [draft, setDraft] = useState("");
@@ -70,17 +75,18 @@ export default function ChatComposer({
     input.current?.focus();
   }
 
-  function send() {
-    if (!draft.trim()) return;
-    onSend(draft);
-    setDraft("");
-    setMentionOpen(false);
+  async function send() {
+    if (!draft.trim() || actionPending) return;
+    if (await onSend(draft)) {
+      setDraft("");
+      setMentionOpen(false);
+    }
   }
 
   function onKeyDown(e: KeyboardEvent) {
     if (e.key === "Enter") {
       e.preventDefault();
-      send();
+      void send();
     }
   }
 
@@ -121,13 +127,14 @@ export default function ChatComposer({
           expanded={mentionOpen}
           active={mentionOpen}
           onClick={() => setMentionOpen((open) => !open)}
+          disabled={actionPending}
         >
           <AtSignIcon size={18} />
         </ToolButton>
-        <ToolButton label="Share a trail" onClick={onShareTrail}>
+        <ToolButton label="Share a trail" onClick={onShareTrail} disabled={actionPending}>
           <TrailIcon size={18} />
         </ToolButton>
-        <ToolButton label="Propose a hike" onClick={onProposeHike}>
+        <ToolButton label="Propose a hike" onClick={onProposeHike} disabled={actionPending}>
           <CalendarIcon size={18} />
         </ToolButton>
         <input
@@ -138,9 +145,10 @@ export default function ChatComposer({
           onKeyDown={onKeyDown}
           placeholder="Write a message, type @ to mention"
           aria-label="Message"
+          disabled={actionPending}
           className="h-11 min-w-0 flex-1 rounded-control border border-field-border bg-background px-3.5 text-nav text-text placeholder:text-text-subtle focus-visible:outline-2 focus-visible:outline-primary"
         />
-        <Button className="min-h-11" aria-label="Send message" onClick={send}>
+        <Button className="min-h-11" aria-label="Send message" onClick={() => { void send(); }} disabled={actionPending}>
           <SendIcon size={16} />
           <span className="hidden sm:inline">Send</span>
         </Button>

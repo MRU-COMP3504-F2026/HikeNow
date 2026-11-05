@@ -8,7 +8,7 @@ import { getReviews } from "../actions/reviews";
 import Footer from "../components/footer";
 import Navbar from "../components/session-navbar";
 import { getCurrentUser } from "@/app/lib/session";
-import Link from "next/link";
+import { redirect } from "next/navigation";
 import ReviewCard, {
   type ReviewCondition,
 } from "../components/review-card";
@@ -58,9 +58,7 @@ function FeedSkeleton() {
 
 async function FeedContent() {
   const currentUser = await getCurrentUser();
-  if (!currentUser) {
-    return <p className="text-text-subtle"><Link href="/login" className="text-primary underline">Log in</Link> to see reviews from people you follow.</p>;
-  }
+  if (!currentUser) redirect("/login");
   const [hikers, reviews, hikes] = await Promise.all([
     getHikers(),
     getReviews(),

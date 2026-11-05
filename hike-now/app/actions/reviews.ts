@@ -5,6 +5,7 @@ import { review } from "@/app/db/schema";
 import { createClient } from "@/app/db/server";
 import { and, eq, sql } from "drizzle-orm";
 import { getCurrentUser } from "@/app/lib/session";
+import { redirect } from "next/navigation";
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 
 // 1. SELECT ALL REVIEWS (Cached for prerendering)
@@ -31,9 +32,16 @@ export async function getReviewById(id: string) {
 
 // 3. CREATE REVIEW
 export async function createReview(formData: FormData) {
+  let user: Awaited<ReturnType<typeof getCurrentUser>>;
   try {
-    const user = await getCurrentUser();
-    if (!user) return { success: false, error: "Please log in to write a review." };
+    user = await getCurrentUser();
+  } catch (error) {
+    console.error("Review creation failed:", error);
+    return { success: false, error: "Could not save your review. Please try again later." };
+  }
+  if (!user) redirect("/login");
+
+  try {
     const fields = readReviewFields(formData);
     const hikeId = formData.get("hikeId");
     if (typeof hikeId !== "string" || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(hikeId)) {
@@ -86,7 +94,7 @@ export async function createReview(formData: FormData) {
 // 4. UPDATE REVIEW
 export async function updateReview(id: string, formData: FormData) {
   const user = await getCurrentUser();
-  if (!user) throw new Error("Please log in to update a review.");
+  if (!user) redirect("/login");
   const [existing] = await db.select().from(review).where(and(eq(review.id, id), eq(review.hikerId, user.id)));
   if (!existing) throw new Error("Review not found or not owned by you.");
   const supabase = await createClient();
@@ -129,7 +137,7 @@ export async function updateReview(id: string, formData: FormData) {
 // 5. DELETE REVIEW
 export async function deleteReview(id: string) {
   const user = await getCurrentUser();
-  if (!user) throw new Error("Please log in to delete a review.");
+  if (!user) redirect("/login");
   const supabase = await createClient();
 
   const [existing] = await db.select().from(review).where(and(eq(review.id, id), eq(review.hikerId, user.id)));

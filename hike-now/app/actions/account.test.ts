@@ -26,15 +26,27 @@ beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
-it("requires a session and a current password before deleting", async () => {
+it("redirects an expired session before accessing the account", async () => {
   mocks.getCurrentUser.mockResolvedValue(null);
-  expect(await deleteAccount("password1")).toHaveProperty("success", false);
+  mocks.redirect.mockImplementation(() => { throw new Error("NEXT_REDIRECT"); });
+  await expect(deleteAccount("password1")).rejects.toThrow("NEXT_REDIRECT");
+  expect(mocks.redirect).toHaveBeenCalledWith("/login");
   expect(mocks.select).not.toHaveBeenCalled();
-  mocks.getCurrentUser.mockResolvedValue({ id: "current-hiker", email: "hiker@example.com" });
+  expect(mocks.delete).not.toHaveBeenCalled();
+});
+
+it("requires a current password before deleting", async () => {
   expect(await deleteAccount("")).toHaveProperty("success", false);
   mocks.verifyPassword.mockResolvedValue(false);
   expect(await deleteAccount("wrong")).toEqual({ success: false, error: "Incorrect password. Your account was not deleted." });
   expect(mocks.delete).not.toHaveBeenCalled();
+  expect(mocks.redirect).not.toHaveBeenCalled();
+});
+
+it("reports session lookup failures without redirecting", async () => {
+  mocks.getCurrentUser.mockRejectedValue(new Error("private db details"));
+  expect(await deleteAccount("password1")).toEqual({ success: false, error: "Could not complete account deletion. Please try again later." });
+  expect(console.error).toHaveBeenCalled();
   expect(mocks.redirect).not.toHaveBeenCalled();
 });
 

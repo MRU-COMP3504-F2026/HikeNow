@@ -4,19 +4,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   select: vi.fn(), limit: vi.fn(), createHiker: vi.fn(),
   verifyPassword: vi.fn(), createSession: vi.fn(), deleteSession: vi.fn(),
-  checkAuthRateLimit: vi.fn(), redirect: vi.fn(),
+  getCurrentUser: vi.fn(), checkAuthRateLimit: vi.fn(), redirect: vi.fn(),
 }));
 vi.mock("@/app/db", () => ({ db: { select: mocks.select } }));
 vi.mock("./hikers", () => ({ createHiker: mocks.createHiker }));
 vi.mock("@/app/lib/password", () => ({ verifyPassword: mocks.verifyPassword }));
-vi.mock("@/app/lib/session", () => ({ createSession: mocks.createSession, deleteSession: mocks.deleteSession }));
+vi.mock("@/app/lib/session", () => ({ createSession: mocks.createSession, deleteSession: mocks.deleteSession, getCurrentUser: mocks.getCurrentUser }));
 vi.mock("@/app/lib/auth-rate-limit", () => ({
   checkAuthRateLimit: mocks.checkAuthRateLimit,
   AuthRateLimitError: class extends Error {},
 }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
 
-import { login, signup, logout } from "./auth";
+import { login, signup, logout, hasActiveSession } from "./auth";
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -86,5 +86,11 @@ describe("auth actions", () => {
     await logout();
     expect(mocks.deleteSession).toHaveBeenCalled();
     expect(mocks.redirect).toHaveBeenCalledWith("/login");
+  });
+
+  it("reports only whether a currently valid session exists", async () => {
+    mocks.getCurrentUser.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: "hiker-id", email: "hiker@example.com" });
+    expect(await hasActiveSession()).toBe(false);
+    expect(await hasActiveSession()).toBe(true);
   });
 });

@@ -40,6 +40,12 @@ Rerun `db:auth` periodically to remove expired sessions and rate-limit records.
 This is application authentication, **not** a Supabase Auth JWT: it does not
 change `auth.uid()` or authenticate the optional Supabase client. Chats and
 follow controls that currently use mock behavior are otherwise unchanged.
+Signed-out visitors are redirected to `/login` when opening chats, the
+following feed, or a review form, or when attempting to follow someone.
+Chat actions and follow controls recheck the session when used, including
+after a session expires; review and account mutations also redirect if the
+session has ended.
+Public trails, reviews, and other hikers' profiles remain accessible.
 Before public deployment, configure ingress rate limiting for authentication
 requests and add account recovery/email verification as needed.
 

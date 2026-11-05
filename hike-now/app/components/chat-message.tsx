@@ -7,10 +7,11 @@ export type ChatMessageViewProps = {
   message: ChatMessage;
   me: ChatPerson;
   onRsvp: (messageId: string, value: Rsvp) => void;
+  actionPending?: boolean;
 };
 
 /** Un mensaje del chat: texto (con menciones resaltadas), ruta compartida o propuesta. */
-export default function ChatMessageView({ message, me, onRsvp }: ChatMessageViewProps) {
+export default function ChatMessageView({ message, me, onRsvp, actionPending = false }: ChatMessageViewProps) {
   const mine = message.from === "me";
 
   return (
@@ -45,6 +46,7 @@ export default function ChatMessageView({ message, me, onRsvp }: ChatMessageView
           proposal={message.proposal}
           me={me}
           onRsvp={(value) => onRsvp(message.id, value)}
+          disabled={actionPending}
         />
       )}
     </div>

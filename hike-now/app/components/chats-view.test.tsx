@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   INITIAL_THREADS,
   ME,
@@ -9,6 +9,14 @@ import {
 } from "../chats/mock-data";
 import type { ChatThread } from "../chats/types";
 import ChatsView from "./chats-view";
+
+const { hasActiveSession, push } = vi.hoisted(() => ({ hasActiveSession: vi.fn(), push: vi.fn() }));
+vi.mock("@/app/actions/auth", () => ({ hasActiveSession }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
+beforeEach(() => {
+  vi.resetAllMocks();
+  hasActiveSession.mockResolvedValue(true);
+});
 
 vi.mock("next/link", () => ({
   default: ({
@@ -81,23 +89,23 @@ describe("ChatsView", () => {
       expect(screen.getByRole("button", { name: "Follow back Sofia Marchetti" })).toBeInTheDocument();
     });
 
-    it("moves an accepted request to Messages", () => {
+    it("moves an accepted request to Messages", async () => {
       setup();
       fireEvent.click(screen.getByRole("tab", { name: /Requests/ }));
       fireEvent.click(screen.getByRole("button", { name: "Accept" }));
 
-      expect(screen.getByRole("tab", { name: "Messages" })).toHaveAttribute("aria-selected", "true");
+      await waitFor(() => expect(screen.getByRole("tab", { name: "Messages" })).toHaveAttribute("aria-selected", "true"));
       expect(screen.getByLabelText("1 pending")).toBeInTheDocument();
       expect(screen.getByRole("heading", { name: "Sofia Marchetti" })).toBeInTheDocument();
       expect(screen.getByLabelText("Message")).toBeInTheDocument();
     });
 
-    it("removes a deleted request", () => {
+    it("removes a deleted request", async () => {
       setup();
       fireEvent.click(screen.getByRole("tab", { name: /Requests/ }));
       fireEvent.click(screen.getByRole("button", { name: "Delete" }));
 
-      expect(within(list()).queryByText("Sofia Marchetti")).not.toBeInTheDocument();
+      await waitFor(() => expect(within(list()).queryByText("Sofia Marchetti")).not.toBeInTheDocument());
       expect(screen.getByRole("heading", { name: "Daniel Okafor" })).toBeInTheDocument();
       expect(screen.getByLabelText("1 pending")).toBeInTheDocument();
     });
@@ -112,18 +120,18 @@ describe("ChatsView", () => {
   });
 
   describe("writing", () => {
-    it("sends a message with Enter and the Send button", () => {
+    it("sends a message with Enter and the Send button", async () => {
       setup();
       const input = screen.getByLabelText("Message");
 
       fireEvent.change(input, { target: { value: "See you at 9" } });
       fireEvent.keyDown(input, { key: "Enter" });
-      expect(screen.getByText("See you at 9")).toBeInTheDocument();
-      expect(input).toHaveValue("");
+      expect(await screen.findByText("See you at 9")).toBeInTheDocument();
+      await waitFor(() => expect(input).toHaveValue(""));
 
       fireEvent.change(input, { target: { value: "Bring water" } });
       fireEvent.click(screen.getByRole("button", { name: "Send message" }));
-      expect(screen.getByText("Bring water")).toBeInTheDocument();
+      expect(await screen.findByText("Bring water")).toBeInTheDocument();
     });
 
     it("ignores empty messages", () => {
@@ -134,7 +142,7 @@ describe("ChatsView", () => {
       expect(screen.getAllByText(/./).length).toBe(before);
     });
 
-    it("lets you mention people you hiked with", () => {
+    it("lets you mention people you hiked with", async () => {
       setup();
       const input = screen.getByLabelText("Message");
 
@@ -146,7 +154,7 @@ describe("ChatsView", () => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
       fireEvent.keyDown(input, { key: "Enter" });
-      expect(screen.getByText("@Hana")).toBeInTheDocument();
+      expect(await screen.findByText("@Hana")).toBeInTheDocument();
     });
 
     it("opens the mention list from the button and closes it with Escape", () => {
@@ -158,34 +166,112 @@ describe("ChatsView", () => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
 
-    it("shares a trail card", () => {
+    it("shares a trail card", async () => {
       setup();
       const before = screen.getAllByRole("link", { name: /View trail/ }).length;
       fireEvent.click(screen.getByRole("button", { name: "Share a trail" }));
 
+      await waitFor(() => expect(screen.getAllByRole("link", { name: /View trail/ })).toHaveLength(before + 1));
       const links = screen.getAllByRole("link", { name: /View trail/ });
-      expect(links.length).toBe(before + 1);
       expect(links[0].getAttribute("href")).toMatch(/^\/reviews\//);
     });
 
-    it("proposes a hike and lets you change your RSVP", () => {
+    it("proposes a hike and lets you change your RSVP", async () => {
       setup();
       fireEvent.click(screen.getByRole("button", { name: "Propose a hike" }));
-      expect(screen.getAllByText("HIKE PROPOSAL")).toHaveLength(2);
+      await waitFor(() => expect(screen.getAllByText("HIKE PROPOSAL")).toHaveLength(2));
 
       const going = screen.getAllByText("You're going");
       fireEvent.click(within(going[going.length - 1].closest("div")!.parentElement!).getByRole("button", { name: "Change" }));
+      await waitFor(() => expect(screen.getAllByRole("button", { name: "Can't make it" })).toHaveLength(2));
       fireEvent.click(screen.getAllByRole("button", { name: "Can't make it" }).at(-1)!);
 
-      expect(screen.getAllByText("You declined this hike").length).toBeGreaterThan(0);
+      expect(await screen.findByText("You declined this hike")).toBeInTheDocument();
+    });
+
+    it("redirects an expired session without losing or sending the draft", async () => {
+      hasActiveSession.mockResolvedValue(false);
+      setup();
+      const input = screen.getByLabelText("Message");
+      fireEvent.change(input, { target: { value: "Not sent" } });
+      fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+      await waitFor(() => expect(push).toHaveBeenCalledWith("/login"));
+      expect(input).toHaveValue("Not sent");
+      expect(screen.queryByText("Not sent")).not.toBeInTheDocument();
+    });
+
+    it("retains a draft after session-check failure and permits a retry", async () => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      hasActiveSession.mockRejectedValueOnce(new Error("network")).mockResolvedValueOnce(true);
+      setup();
+      const input = screen.getByLabelText("Message");
+      fireEvent.change(input, { target: { value: "Retry message" } });
+      fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+      expect(await screen.findByRole("alert")).toHaveTextContent("Could not complete this action");
+      expect(input).toHaveValue("Retry message");
+      expect(push).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+      expect(await screen.findByText("Retry message")).toBeInTheDocument();
+      await waitFor(() => expect(input).toHaveValue(""));
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    });
+
+    it("prevents duplicate sends while checking the session", async () => {
+      let resolve!: (value: boolean) => void;
+      hasActiveSession.mockImplementation(() => new Promise<boolean>((r) => { resolve = r; }));
+      setup();
+      const input = screen.getByLabelText("Message");
+      fireEvent.change(input, { target: { value: "One message" } });
+      fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+      expect(input).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Send message" })).toBeDisabled();
+      await act(async () => { resolve(true); });
+      expect(await screen.findByText("One message")).toBeInTheDocument();
+      expect(hasActiveSession).toHaveBeenCalledTimes(1);
     });
   });
 
-  it("toggles follow in the conversation header", () => {
+  it("toggles follow in the conversation header", async () => {
     setup();
     fireEvent.click(screen.getByRole("button", { name: "Unfollow Priya Nair" }));
-    expect(screen.getByRole("button", { name: "Follow Priya Nair" })).toHaveAttribute("aria-pressed", "false");
+    expect(await screen.findByRole("button", { name: "Follow Priya Nair" })).toHaveAttribute("aria-pressed", "false");
   });
+
+  it("redirects an expired session when following from a conversation", async () => {
+    hasActiveSession.mockResolvedValue(false);
+    setup();
+    fireEvent.click(screen.getByRole("button", { name: "Unfollow Priya Nair" }));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/login"));
+    expect(screen.getByRole("button", { name: "Unfollow Priya Nair" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it.each(["Share a trail", "Propose a hike", "I'm in"])(
+    "redirects an expired session before the %s chat action",
+    async (label) => {
+      hasActiveSession.mockResolvedValue(false);
+      setup();
+      const beforeLinks = screen.getAllByRole("link", { name: /View trail/ }).length;
+      const beforeProposals = screen.getAllByText("HIKE PROPOSAL").length;
+      fireEvent.click(screen.getByRole("button", { name: label }));
+      await waitFor(() => expect(push).toHaveBeenCalledWith("/login"));
+      expect(screen.getAllByRole("link", { name: /View trail/ })).toHaveLength(beforeLinks);
+      expect(screen.getAllByText("HIKE PROPOSAL")).toHaveLength(beforeProposals);
+      expect(screen.queryByText("You're going")).not.toBeInTheDocument();
+    },
+  );
+
+  it.each(["Accept", "Delete", "Block"])(
+    "redirects an expired session before %s changes a request",
+    async (label) => {
+      hasActiveSession.mockResolvedValue(false);
+      setup();
+      fireEvent.click(screen.getByRole("tab", { name: /Requests/ }));
+      fireEvent.click(screen.getByRole("button", { name: label }));
+      await waitFor(() => expect(push).toHaveBeenCalledWith("/login"));
+      expect(screen.getByRole("heading", { name: "Sofia Marchetti" })).toBeInTheDocument();
+      expect(screen.getByLabelText("2 pending")).toBeInTheDocument();
+    },
+  );
 
   it("goes back to the list on mobile", () => {
     setup();
@@ -194,7 +280,7 @@ describe("ChatsView", () => {
     expect(list()).toHaveClass("flex");
   });
 
-  it("shows the empty state with suggestions when there are no chats", () => {
+  it("shows the empty state with suggestions when there are no chats", async () => {
     setup([]);
 
     expect(screen.getByText("No chats yet")).toBeInTheDocument();
@@ -203,7 +289,7 @@ describe("ChatsView", () => {
 
     fireEvent.click(screen.getByRole("button", { name: `Follow ${SUGGESTED_HIKERS[0].person.name}` }));
     expect(
-      screen.getByRole("button", { name: `Unfollow ${SUGGESTED_HIKERS[0].person.name}` }),
+      await screen.findByRole("button", { name: `Unfollow ${SUGGESTED_HIKERS[0].person.name}` }),
     ).toBeInTheDocument();
   });
 });
