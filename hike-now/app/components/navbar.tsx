@@ -6,6 +6,7 @@ import { useState } from "react";
 import { CloseIcon, MenuIcon, SearchIcon, UserIcon } from "./icons";
 import { navLinks } from "./nav-links";
 import favicon2 from '../favicon2.ico';
+import { logout } from "@/app/actions/auth";
 
 export type NavbarProps = {
   /** Usuario con sesión iniciada. Si es null/undefined se muestra el botón Login. */
@@ -85,6 +86,9 @@ export default function Navbar({ user = null }: NavbarProps) {
             <div className="flex items-center gap-3">
               <Avatar />
               <span className="text-heading text-primary">{user.email}</span>
+              <form action={logout}>
+                <button type="submit" className={loginClasses}>Log out</button>
+              </form>
             </div>
           ) : (
             <Link href="/login" className={loginClasses}>
@@ -127,6 +131,9 @@ export default function Navbar({ user = null }: NavbarProps) {
             <div className="flex items-center gap-3">
               <Avatar />
               <span className="text-small text-primary">{user.email}</span>
+              <form action={logout}>
+                <button type="submit" className={loginClasses}>Log out</button>
+              </form>
             </div>
           ) : (
             <Link

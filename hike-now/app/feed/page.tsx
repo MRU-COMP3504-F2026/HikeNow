@@ -6,12 +6,12 @@ import { getHikes } from "../actions/hikes";
 import { getReviews } from "../actions/reviews";
 
 import Footer from "../components/footer";
-import Navbar from "../components/navbar";
+import Navbar from "../components/session-navbar";
+import { getCurrentUser } from "@/app/lib/session";
+import Link from "next/link";
 import ReviewCard, {
   type ReviewCondition,
 } from "../components/review-card";
-
-const CURRENT_USERNAME = "hshar360";
 
 const conditionMap: Record<string, ReviewCondition> = {
   good: "good",
@@ -22,7 +22,7 @@ const conditionMap: Record<string, ReviewCondition> = {
 export default function FeedPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <Navbar user={{ email: CURRENT_USERNAME }} />
+      <Navbar />
 
       <main className="flex-1 px-4 py-10 md:px-16">
         <h1 className="mb-8 text-title font-semibold text-ink">
@@ -57,23 +57,15 @@ function FeedSkeleton() {
 }
 
 async function FeedContent() {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) {
+    return <p className="text-text-subtle"><Link href="/login" className="text-primary underline">Log in</Link> to see reviews from people you follow.</p>;
+  }
   const [hikers, reviews, hikes] = await Promise.all([
     getHikers(),
     getReviews(),
     getHikes(),
   ]);
-
-  const currentUser = hikers.find(
-    (hiker) => hiker.email.split("@")[0] === CURRENT_USERNAME,
-  );
-
-  if (!currentUser) {
-    return (
-      <p className="text-text-subtle">
-        Current user could not be found.
-      </p>
-    );
-  }
 
   const following = await getFollowing(currentUser.id);
 
