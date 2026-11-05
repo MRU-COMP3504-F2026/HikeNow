@@ -1,5 +1,5 @@
 import Footer from "../../components/footer";
-import Navbar from "../../components/navbar";
+import Navbar from "../../components/session-navbar";
 import ReviewForm from "../../components/review-form";
 import { getHikes } from "../../actions/hikes";
 
@@ -20,7 +20,7 @@ export default async function NewReviewPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <Navbar user={{ email: "hshar360" }} />
+      <Navbar />
 
       <main className="flex-1 px-4 py-10 md:px-16">
         <h1 className="mb-8 text-title font-semibold text-primary">

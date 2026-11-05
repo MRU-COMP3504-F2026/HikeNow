@@ -5,6 +5,9 @@ import {
   text, 
   decimal, 
   primaryKey,
+  timestamp,
+  uniqueIndex,
+  integer,
   pgPolicy 
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
@@ -19,6 +22,7 @@ export const hiker = pgTable(
     description: text("description"),
   },
   (table) => [
+    uniqueIndex("hiker_email_normalized_unique").on(sql`lower(${table.email})`),
     pgPolicy("Public hikers are viewable by everyone", {
       for: "select",
       to: "public",
@@ -31,6 +35,18 @@ export const hiker = pgTable(
     }),
   ]
 ).enableRLS();
+
+export const hikerSession = pgTable("hiker_session", {
+  tokenHash: varchar("token_hash", { length: 64 }).primaryKey(),
+  hikerId: uuid("hiker_id").notNull().references(() => hiker.id, { onDelete: "cascade" }),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+}).enableRLS();
+
+export const authAttempt = pgTable("auth_attempt", {
+  key: varchar("key", { length: 64 }).primaryKey(),
+  attempts: integer("attempts").notNull(),
+  resetsAt: timestamp("resets_at", { withTimezone: true }).notNull(),
+}).enableRLS();
 
 // 2. GROUP
 export const group = pgTable(

@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import Button from "./button";
 import FormField from "./form-field";
 import PasswordField from "./password-field";
+import { EMAIL_PATTERN, MAX_PASSWORD_LENGTH } from "@/app/lib/auth-validation";
 
 export type LoginValues = { email: string; password: string };
 
@@ -13,7 +14,7 @@ export type LoginFormProps = {
   className?: string;
 };
 
-export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export { EMAIL_PATTERN } from "@/app/lib/auth-validation";
 
 /** Formulario de la pestaña Login: email + contraseña. Solo UI y validación; la autenticación va en onSubmit. */
 export default function LoginForm({ onSubmit, className = "" }: LoginFormProps) {
@@ -33,6 +34,9 @@ export default function LoginForm({ onSubmit, className = "" }: LoginFormProps) 
     if (!values.email) next.email = "Please enter your email.";
     else if (!EMAIL_PATTERN.test(values.email)) next.email = "Please enter a valid email.";
     if (!values.password) next.password = "Please enter your password.";
+    else if (values.password.length > MAX_PASSWORD_LENGTH) {
+      next.password = `Password must be at most ${MAX_PASSWORD_LENGTH} characters.`;
+    }
     setErrors(next);
     setFormError(null);
     if (Object.keys(next).length > 0) return;

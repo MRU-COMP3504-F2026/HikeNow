@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import Button from "./button";
 import FormField from "./form-field";
-import { EMAIL_PATTERN } from "./login-form";
+import { EMAIL_PATTERN, MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH } from "@/app/lib/auth-validation";
 import PasswordField from "./password-field";
 
 export type SignupValues = { email: string; password: string };
@@ -14,7 +14,7 @@ export type SignupFormProps = {
   className?: string;
 };
 
-export const MIN_PASSWORD_LENGTH = 8;
+export { MIN_PASSWORD_LENGTH } from "@/app/lib/auth-validation";
 
 type Errors = Partial<Record<"email" | "password" | "confirmPassword", string>>;
 
@@ -36,6 +36,8 @@ export default function SignupForm({ onSubmit, className = "" }: SignupFormProps
     else if (!EMAIL_PATTERN.test(email)) next.email = "Please enter a valid email.";
     if (password.length < MIN_PASSWORD_LENGTH) {
       next.password = `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`;
+    } else if (password.length > MAX_PASSWORD_LENGTH) {
+      next.password = `Password must be at most ${MAX_PASSWORD_LENGTH} characters.`;
     }
     if (confirmPassword !== password) next.confirmPassword = "Passwords do not match.";
     setErrors(next);

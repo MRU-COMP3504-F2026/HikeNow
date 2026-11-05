@@ -9,6 +9,7 @@ const { usePathname } = vi.hoisted(() => ({
 vi.mock("next/navigation", () => ({
   usePathname,
 }));
+vi.mock("@/app/actions/auth", () => ({ logout: vi.fn() }));
 
 vi.mock("next/link", () => ({
   default: ({
