@@ -10,6 +10,9 @@ import UserProfile from "../../components/user-profile";
 import { getHikers } from "../../actions/hikers";
 import { getReviews } from "../../actions/reviews";
 import { getHikes } from "../../actions/hikes";
+import { getFollowers, getFollowing } from "../../actions/follows";
+import { hikerName } from "../../lib/hiker-search";
+import { getCurrentUser } from "@/app/lib/session";
 
 interface PageProps {
   params: Promise<{ id: string }> | { id: string };
@@ -62,17 +65,23 @@ async function ProfileContent({ params }: PageProps) {
   const { id } = await params;
 
   // Fetch all required data concurrently from PostgreSQL
-  const [hikers, reviewsData, hikesData] = await Promise.all([
+  const [hikers, reviewsData, hikesData, currentUser] = await Promise.all([
     getHikers(),
     getReviews(),
     getHikes(),
+    getCurrentUser(),
   ]);
 
   const hiker = hikers.find((h) => h.id === id);
   if (!hiker) notFound();
 
-  const name = hiker.email.split("@")[0];
-  const displayName = name.charAt(0).toUpperCase() + name.slice(1);
+  const [followers, following] = await Promise.all([
+    getFollowers(hiker.id),
+    getFollowing(hiker.id),
+  ]);
+
+  const displayName = hikerName(hiker.email);
+  const isOwnProfile = currentUser?.id === hiker.id;
 
   // Filter reviews written by this hiker
   const reviews = reviewsData
@@ -104,8 +113,10 @@ async function ProfileContent({ params }: PageProps) {
           stats={[
             { label: "Reviews", value: reviews.length },
             { label: "Trails reviewed", value: trailsReviewed },
+            { label: "Followers", value: followers.length },
+            { label: "Following", value: following.length },
           ]}
-          action={<FollowButton name={displayName} />}
+          action={isOwnProfile ? undefined : <FollowButton name={displayName} />}
           className="mb-10"
         />
 

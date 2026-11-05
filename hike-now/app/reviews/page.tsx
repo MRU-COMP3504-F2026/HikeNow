@@ -4,6 +4,7 @@ import { UserIcon } from "../components/icons";
 import Navbar from "../components/session-navbar";
 import StarRating from "../components/star-rating";
 import Tag from "../components/tag";
+import { profileHref } from "../lib/hiker-search";
 
 // Import the Server Actions created previously
 import { getReviews } from "../actions/reviews";
@@ -18,6 +19,7 @@ type ReviewUI = {
   title: string;
   comment: string;
   author: string;
+  authorHref?: string;
   trailName: string;
   photoUrl?: string;
 };
@@ -114,7 +116,14 @@ function ReviewCard({ review }: { review: ReviewUI }) {
 
             <div>
               <p className="text-small font-medium capitalize text-text">
-                {review.author} ·{" "}
+                {review.authorHref ? (
+                  <Link href={review.authorHref} className="hover:text-primary hover:underline">
+                    {review.author}
+                  </Link>
+                ) : (
+                  review.author
+                )}{" "}
+                ·{" "}
                 <span className="font-normal text-text-subtle">
                   {review.trailName}
                 </span>
@@ -170,6 +179,7 @@ export default async function ReviewsPage() {
         title: r.title ?? "Untitled Review",
         comment: r.comments ?? "",
         author: hiker ? hiker.email.split("@")[0] : "Anonymous Hiker",
+        authorHref: hiker ? profileHref(hiker.id) : undefined,
         trailName: hike ? hike.name : "Unknown Trail",
         photoUrl: r.photo ?? undefined,
       };

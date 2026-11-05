@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { UserIcon } from "./icons";
 
 export type UserProfileProps = {
   /** Nombre que se muestra, p. ej. "Alex". */
@@ -43,8 +42,11 @@ export default function UserProfile({
           className="size-28 shrink-0 rounded-full object-cover"
         />
       ) : (
-        <span className="grid size-28 shrink-0 place-items-center rounded-full bg-primary text-on-primary shadow-control">
-          <UserIcon size={56} />
+        <span
+          aria-hidden="true"
+          className="grid size-28 shrink-0 place-items-center rounded-full bg-primary text-title font-semibold text-on-primary shadow-control"
+        >
+          {name.charAt(0).toUpperCase()}
         </span>
       )}
 
