@@ -54,15 +54,19 @@ describe("Navbar", () => {
     expect(screen.queryByRole("link", { name: "Login" })).not.toBeInTheDocument();
   });
 
-  it("links to the profile from mobile navigation and closes the menu", () => {
-    render(<Navbar user={{ email: "hiker@example.com" }} />);
-    fireEvent.click(screen.getByRole("button", { name: "Open menu" }));
-    const links = screen.getAllByRole("link", { name: "View your profile" });
-    expect(links).toHaveLength(2);
-    expect(links[1]).toHaveAttribute("href", "/profile");
-    links[1].addEventListener("click", (event) => event.preventDefault());
-    fireEvent.click(links[1]);
-    expect(screen.queryByRole("navigation", { name: "Mobile" })).not.toBeInTheDocument();
+  it("links the signed-in user to their profile", () => {
+    render(<Navbar user={{ id: "u1", email: "hiker@example.com" }} />);
+
+    expect(screen.getByRole("link", { name: /My profile/ })).toHaveAttribute("href", "/profile/u1");
+  });
+
+  it("submits the search box to /search with the query", () => {
+    render(<Navbar />);
+
+    const form = screen.getByRole("search");
+    expect(form).toHaveAttribute("action", "/search");
+    expect(form).toHaveAttribute("method", "get");
+    expect(screen.getAllByLabelText("Search")[0]).toHaveAttribute("name", "q");
   });
 
   it("opens and closes the mobile navigation", () => {

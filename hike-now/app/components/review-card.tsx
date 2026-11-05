@@ -19,6 +19,8 @@ export type ReviewCardProps = {
   comments?: string;
   /** Nombre de quien escribió la review. Si falta no se muestra el autor. */
   author?: string;
+  /** Enlace al perfil del autor. Si se pasa, el nombre del autor es un enlace. */
+  authorHref?: string;
   /** Nombre del sendero. Se muestra encima del título (útil en el perfil). */
   trailName?: string;
   /** Enlace del sendero. Si se pasa, trailName es un enlace. */
@@ -54,6 +56,7 @@ export default function ReviewCard({
   title,
   comments,
   author,
+  authorHref,
   trailName,
   trailHref,
   avatarUrl,
@@ -122,7 +125,13 @@ export default function ReviewCard({
               </span>
             )}
             <div className="flex flex-col text-[10px] leading-tight text-text-subtle">
-              <span>{author}</span>
+              {authorHref ? (
+                <Link href={authorHref} className="hover:text-primary hover:underline">
+                  {author}
+                </Link>
+              ) : (
+                <span>{author}</span>
+              )}
               {date && (
                 <time dateTime={new Date(date).toISOString()}>{formatDate(date)}</time>
               )}

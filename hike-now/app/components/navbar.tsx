@@ -10,7 +10,7 @@ import { logout } from "@/app/actions/auth";
 
 export type NavbarProps = {
   /** Usuario con sesión iniciada. Si es null/undefined se muestra el botón Login. */
-  user?: { email: string } | null;
+  user?: { email: string; id?: string } | null;
 };
 
 const loginClasses =
@@ -21,6 +21,27 @@ function Avatar() {
     <span className="grid size-10 place-items-center rounded-full bg-primary text-on-primary shadow-control">
       <UserIcon size={20} />
     </span>
+  );
+}
+
+/** Avatar + email. Si se conoce el id, es un enlace al perfil del usuario. */
+function UserBadge({ user, textClass, onNavigate }: { user: { email: string; id?: string }; textClass: string; onNavigate?: () => void }) {
+  const content = (
+    <>
+      <Avatar />
+      <span className={textClass}>{user.email}</span>
+    </>
+  );
+  if (!user.id) return <div className="flex items-center gap-3">{content}</div>;
+  return (
+    <Link
+      href={`/profile/${user.id}`}
+      aria-label={`My profile (${user.email})`}
+      onClick={onNavigate}
+      className="flex items-center gap-3 rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+    >
+      {content}
+    </Link>
   );
 }
 
@@ -55,14 +76,16 @@ export default function Navbar({ user = null }: NavbarProps) {
           Hike Now!
         </Link>
 
-        {/* Buscador (solo escritorio). Aún sin funcionalidad. */}
+        {/* Buscador (solo escritorio): lleva a /search con hikers y rutas. */}
         <form
           role="search"
-          onSubmit={(e) => e.preventDefault()}
+          action="/search"
+          method="get"
           className="mx-auto hidden h-8 w-48 items-center gap-1 rounded-full border border-border bg-background px-3 md:flex"
         >
           <input
             type="search"
+            name="q"
             placeholder="Search"
             aria-label="Search"
             className="min-w-0 flex-1 bg-transparent text-small text-text outline-none placeholder:text-placeholder"
@@ -84,10 +107,7 @@ export default function Navbar({ user = null }: NavbarProps) {
           ))}
           {user ? (
             <div className="flex items-center gap-3">
-              <Link href="/profile" aria-label="View your profile" className="flex items-center gap-3 rounded-control focus-visible:outline-2 focus-visible:outline-primary">
-                <Avatar />
-                <span className="text-heading text-primary">{user.email}</span>
-              </Link>
+              <UserBadge user={user} textClass="text-heading text-primary" />
               <form action={logout}>
                 <button type="submit" className={loginClasses}>Log out</button>
               </form>
@@ -131,10 +151,7 @@ export default function Navbar({ user = null }: NavbarProps) {
           ))}
           {user ? (
             <div className="flex items-center gap-3">
-              <Link href="/profile" aria-label="View your profile" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-control focus-visible:outline-2 focus-visible:outline-primary">
-                <Avatar />
-                <span className="text-small text-primary">{user.email}</span>
-              </Link>
+              <UserBadge user={user} textClass="text-small text-primary" onNavigate={() => setOpen(false)} />
               <form action={logout}>
                 <button type="submit" className={loginClasses}>Log out</button>
               </form>

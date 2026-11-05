@@ -12,6 +12,9 @@ import { getCurrentUser } from "../../lib/session";
 import { getHikers, getHikerById } from "../../actions/hikers";
 import { getReviews } from "../../actions/reviews";
 import { getHikes } from "../../actions/hikes";
+import { getFollowers, getFollowing } from "../../actions/follows";
+import { hikerName } from "../../lib/hiker-search";
+import { getCurrentUser } from "@/app/lib/session";
 
 interface PageProps {
   params: Promise<{ id: string }> | { id: string };
@@ -64,8 +67,8 @@ async function ProfileContent({ params }: PageProps) {
   const { id } = await params;
 
   // Fetch all required data concurrently from PostgreSQL
-  const [hiker, reviewsData, hikesData, currentUser] = await Promise.all([
-    getHikerById(id),
+  const [hikers, reviewsData, hikesData, currentUser] = await Promise.all([
+    getHikers(),
     getReviews(),
     getHikes(),
     getCurrentUser(),
@@ -74,8 +77,13 @@ async function ProfileContent({ params }: PageProps) {
   if (!hiker) notFound();
   const isOwnProfile = currentUser?.id === hiker.id;
 
-  const name = hiker.email.split("@")[0];
-  const displayName = name.charAt(0).toUpperCase() + name.slice(1);
+  const [followers, following] = await Promise.all([
+    getFollowers(hiker.id),
+    getFollowing(hiker.id),
+  ]);
+
+  const displayName = hikerName(hiker.email);
+  const isOwnProfile = currentUser?.id === hiker.id;
 
   // Filter reviews written by this hiker
   const reviews = reviewsData
@@ -111,9 +119,11 @@ async function ProfileContent({ params }: PageProps) {
             { label: "Joined", value: hiker.joinedAt ? new Date(hiker.joinedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }) : "Not recorded" },
             { label: "Reviews", value: reviews.length },
             { label: "Trails reviewed", value: trailsReviewed },
+            { label: "Followers", value: followers.length },
+            { label: "Following", value: following.length },
           ]}
           action={isOwnProfile ? undefined : <FollowButton name={displayName} />}
-          className={isOwnProfile ? "mb-10 rounded-control border border-border p-6 shadow-control" : "mb-10"}
+          className="mb-10"
         />
 
         <h2 className="mb-4 text-heading font-semibold text-ink">

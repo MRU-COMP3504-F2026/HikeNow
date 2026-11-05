@@ -3,7 +3,8 @@ import { getCurrentUser } from "@/app/lib/session";
 import Navbar from "./navbar";
 
 async function CurrentNavbar() {
-  return <Navbar user={await getCurrentUser()} />;
+  const user = await getCurrentUser();
+  return <Navbar user={user ? { id: user.id, email: user.email } : null} />;
 }
 
 export default function SessionNavbar() {
