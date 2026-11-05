@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { CloseIcon, MenuIcon, SearchIcon, UserIcon } from "./icons";
 import { navLinks } from "./nav-links";
@@ -25,7 +25,9 @@ function Avatar() {
 
 export default function Navbar({ user = null }: NavbarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
   const linkClasses = (href: string) => {
     const active = pathname === href || pathname.startsWith(`${href}/`);
@@ -57,14 +59,26 @@ export default function Navbar({ user = null }: NavbarProps) {
         {/* Buscador (solo escritorio). Aún sin funcionalidad. */}
         <form
           role="search"
-          onSubmit={(e) => e.preventDefault()}
+          onSubmit={(e) => {
+          e.preventDefault();
+
+          const query = search.trim();
+
+          if (query) {
+            router.push(`/?search=${encodeURIComponent(query)}`);
+          } else {
+            router.push("/");
+          }
+          }}
           className="mx-auto hidden h-8 w-48 items-center gap-1 rounded-full border border-border bg-background px-3 md:flex"
         >
           <input
-            type="search"
-            placeholder="Search"
-            aria-label="Search"
-            className="min-w-0 flex-1 bg-transparent text-small text-text outline-none placeholder:text-placeholder"
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search"
+              aria-label="Search"
+              className="min-w-0 flex-1 bg-transparent text-small text-text outline-none placeholder:text-placeholder"
           />
           <button type="submit" aria-label="Search" className="text-ink">
             <SearchIcon size={12} />
