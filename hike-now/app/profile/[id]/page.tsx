@@ -14,7 +14,6 @@ import { getReviews } from "../../actions/reviews";
 import { getHikes } from "../../actions/hikes";
 import { getFollowers, getFollowing } from "../../actions/follows";
 import { hikerName } from "../../lib/hiker-search";
-import { getCurrentUser } from "@/app/lib/session";
 
 interface PageProps {
   params: Promise<{ id: string }> | { id: string };
@@ -67,8 +66,8 @@ async function ProfileContent({ params }: PageProps) {
   const { id } = await params;
 
   // Fetch all required data concurrently from PostgreSQL
-  const [hikers, reviewsData, hikesData, currentUser] = await Promise.all([
-    getHikers(),
+  const [hiker, reviewsData, hikesData, currentUser] = await Promise.all([
+    getHikerById(id),
     getReviews(),
     getHikes(),
     getCurrentUser(),
@@ -83,7 +82,6 @@ async function ProfileContent({ params }: PageProps) {
   ]);
 
   const displayName = hikerName(hiker.email);
-  const isOwnProfile = currentUser?.id === hiker.id;
 
   // Filter reviews written by this hiker
   const reviews = reviewsData

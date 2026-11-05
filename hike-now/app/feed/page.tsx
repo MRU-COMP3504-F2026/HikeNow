@@ -8,7 +8,7 @@ import { getReviews } from "../actions/reviews";
 import Footer from "../components/footer";
 import Navbar from "../components/session-navbar";
 import { getCurrentUser } from "@/app/lib/session";
-import Link from "next/link";
+import { redirect } from "next/navigation";
 import { profileHref } from "../lib/hiker-search";
 import ReviewCard, {
   type ReviewCondition,
