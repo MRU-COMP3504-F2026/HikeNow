@@ -3,6 +3,8 @@ import Footer from "../../../components/footer";
 import Navbar from "../../../components/session-navbar";
 import ReviewForm from "../../../components/review-form";
 import { getHikes } from "../../../actions/hikes";
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "../../../lib/session";
 
 // Disable instant blocking route check for parameter resolution
 export const instant = false;
@@ -17,6 +19,7 @@ export async function generateStaticParams() {
 }
 
 async function ReviewFormContent({ params }: PageProps) {
+  if (!await getCurrentUser()) redirect("/login");
   const resolvedParams = await params;
   const trailId = resolvedParams.id;
 
@@ -25,7 +28,7 @@ async function ReviewFormContent({ params }: PageProps) {
   const trails = hikes.map((h) => ({
     id: h.id,
     name: h.name,
-    photo: h.landmarks ?? "/images/placeholder-trail.jpg",
+    photo: h.photo ?? "/images/placeholder-trail.jpg",
     equipment: h.equipment ?? "",
   }));
 

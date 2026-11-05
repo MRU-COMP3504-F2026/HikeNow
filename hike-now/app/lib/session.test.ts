@@ -6,11 +6,13 @@ const mocks = vi.hoisted(() => ({
   get: vi.fn(), set: vi.fn(), remove: vi.fn(),
   select: vi.fn(), limit: vi.fn(), values: vi.fn(),
   insert: vi.fn(), delete: vi.fn(), where: vi.fn(), transaction: vi.fn(),
+  connection: vi.fn(),
 }));
 vi.mock("server-only", () => ({}));
 vi.mock("next/headers", () => ({
   cookies: async () => ({ get: mocks.get, set: mocks.set, delete: mocks.remove }),
 }));
+vi.mock("next/server", () => ({ connection: mocks.connection }));
 vi.mock("@/app/db", () => ({
   db: {
     select: mocks.select, delete: mocks.delete, transaction: mocks.transaction,
@@ -71,9 +73,18 @@ it("returns only public identity, or null for expired/revoked sessions", async (
   mocks.get.mockReturnValue({ value: "b".repeat(64) });
   mocks.limit.mockResolvedValue([{ id: "hiker-id", email: "a@b.co" }]);
   expect(await getCurrentUser()).toEqual({ id: "hiker-id", email: "a@b.co" });
+  expect(mocks.connection).toHaveBeenCalled();
+  expect(mocks.connection.mock.invocationCallOrder[0]).toBeLessThan(mocks.get.mock.invocationCallOrder[0]);
   expect(mocks.select).toHaveBeenCalledWith({ id: hiker.id, email: hiker.email });
   mocks.limit.mockResolvedValue([]);
   expect(await getCurrentUser()).toBeNull();
+});
+
+it("does not access cookies or evaluate session expiry before request-time rendering", async () => {
+  mocks.connection.mockRejectedValue(new Error("prerender suspended"));
+  await expect(getCurrentUser()).rejects.toThrow("prerender suspended");
+  expect(mocks.get).not.toHaveBeenCalled();
+  expect(mocks.select).not.toHaveBeenCalled();
 });
 
 it("revokes the database session and deletes the cookie", async () => {

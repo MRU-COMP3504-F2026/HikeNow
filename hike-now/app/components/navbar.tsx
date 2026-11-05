@@ -84,8 +84,10 @@ export default function Navbar({ user = null }: NavbarProps) {
           ))}
           {user ? (
             <div className="flex items-center gap-3">
-              <Avatar />
-              <span className="text-heading text-primary">{user.email}</span>
+              <Link href="/profile" aria-label="View your profile" className="flex items-center gap-3 rounded-control focus-visible:outline-2 focus-visible:outline-primary">
+                <Avatar />
+                <span className="text-heading text-primary">{user.email}</span>
+              </Link>
               <form action={logout}>
                 <button type="submit" className={loginClasses}>Log out</button>
               </form>
@@ -129,8 +131,10 @@ export default function Navbar({ user = null }: NavbarProps) {
           ))}
           {user ? (
             <div className="flex items-center gap-3">
-              <Avatar />
-              <span className="text-small text-primary">{user.email}</span>
+              <Link href="/profile" aria-label="View your profile" onClick={() => setOpen(false)} className="flex items-center gap-3 rounded-control focus-visible:outline-2 focus-visible:outline-primary">
+                <Avatar />
+                <span className="text-small text-primary">{user.email}</span>
+              </Link>
               <form action={logout}>
                 <button type="submit" className={loginClasses}>Log out</button>
               </form>

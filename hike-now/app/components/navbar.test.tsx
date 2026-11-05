@@ -50,7 +50,19 @@ describe("Navbar", () => {
     render(<Navbar user={{ email: "hiker@example.com" }} />);
 
     expect(screen.getAllByText("hiker@example.com")).toHaveLength(1);
+    expect(screen.getByRole("link", { name: "View your profile" })).toHaveAttribute("href", "/profile");
     expect(screen.queryByRole("link", { name: "Login" })).not.toBeInTheDocument();
+  });
+
+  it("links to the profile from mobile navigation and closes the menu", () => {
+    render(<Navbar user={{ email: "hiker@example.com" }} />);
+    fireEvent.click(screen.getByRole("button", { name: "Open menu" }));
+    const links = screen.getAllByRole("link", { name: "View your profile" });
+    expect(links).toHaveLength(2);
+    expect(links[1]).toHaveAttribute("href", "/profile");
+    links[1].addEventListener("click", (event) => event.preventDefault());
+    fireEvent.click(links[1]);
+    expect(screen.queryByRole("navigation", { name: "Mobile" })).not.toBeInTheDocument();
   });
 
   it("opens and closes the mobile navigation", () => {

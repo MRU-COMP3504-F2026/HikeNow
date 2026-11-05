@@ -95,6 +95,7 @@ export default function ReviewForm({ trails, initialTrailId }: ReviewFormProps) 
   const [picker, setPicker] = useState<"tags" | "equipment" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const trail = trails.find((t) => t.id === trailId) ?? trails[0];
   /*
@@ -139,6 +140,7 @@ export default function ReviewForm({ trails, initialTrailId }: ReviewFormProps) 
   }
 
 async function handleSave() {
+  if (saving) return;
   if (!title.trim()) {
     setError("Please enter a title for your review.");
     return;
@@ -152,11 +154,11 @@ async function handleSave() {
     return;
   }
   setError(null);
+  setSaving(true);
 
   try {
     const formData = new FormData();
     formData.append("hikeId", trailId);
-    formData.append("hikerId", "e7a7ba1b-1bf9-4595-becd-6a94689fa60d");
     formData.append("rating", rating.toString());
     formData.append("tags", tags.join(", "));
     formData.append("condition", condition ?? "good");
@@ -169,12 +171,18 @@ async function handleSave() {
     }
 
     // Call your existing Server Action directly
-    await createReview(formData);
+    const result = await createReview(formData);
+    if (!result.success) {
+      setError(result.error ?? "Failed to save review.");
+      return;
+    }
 
     setSaved(true);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to save review.";
     setError(message);
+  } finally {
+    setSaving(false);
   }
 }
   function goBack() {
@@ -366,8 +374,8 @@ async function handleSave() {
           )}
 
           <div className="flex gap-6">
-            <Button type="submit" className="flex-1">
-              Save
+            <Button type="submit" disabled={saving} className="flex-1">
+              {saving ? "Saving..." : "Save"}
             </Button>
             <Button type="button" variant="danger" onClick={goBack} className="flex-1">
               Cancel
