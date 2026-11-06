@@ -92,23 +92,35 @@ function groupThread(overrides: Partial<GroupChatThread> = {}): GroupChatThread 
 }
 
 describe("ChatsView", () => {
-  it("explains how to create a group when fewer than two hikers are followed", () => {
-    setup([], { contacts: [INITIAL_THREADS[0].person] });
-    fireEvent.click(screen.getByRole("button", { name: "New group chat" }));
-    expect(screen.getByText(/Follow at least two hikers/)).toBeInTheDocument();
+  it("offers just one new-chat button and explains how to find recipients when none are followed", () => {
+    setup([]);
+    expect(screen.queryByRole("button", { name: "New group chat" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "New chat" }));
+    expect(screen.getByRole("dialog", { name: "New chat" })).toBeInTheDocument();
+    expect(screen.getByText(/Follow a hiker to start a chat/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Find hikers" })).toHaveAttribute("href", "/search");
-    expect(screen.getByRole("button", { name: "Create group" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Start chat" })).toBeDisabled();
   });
 
-  it("validates the group name and requires two invitees", () => {
+  it("searches followed hikers by name and handle and preserves recipients across searches", () => {
     setup([], { contacts: groupMembers.slice(1) });
-    fireEvent.click(screen.getByRole("button", { name: "New group chat" }));
-    fireEvent.click(screen.getByRole("button", { name: "Create group" }));
-    expect(screen.getByRole("alert")).toHaveTextContent("Enter a group name");
-    fireEvent.change(screen.getByLabelText("Group name"), { target: { value: "Weekend hikers" } });
-    fireEvent.click(screen.getByRole("checkbox", { name: /Priya Nair/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Create group" }));
-    expect(screen.getByRole("alert")).toHaveTextContent("between 2 and 14");
+    expect(screen.queryByRole("button", { name: "Message Priya Nair" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "New chat" }));
+    const search = screen.getByRole("searchbox", { name: "Search hikers you follow" });
+    expect(search).toHaveFocus();
+    fireEvent.change(search, { target: { value: "  pRiYa  " } });
+    expect(screen.queryByRole("button", { name: "Add Lucas Torres" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Add Priya Nair" }));
+    expect(screen.getByRole("button", { name: "Priya Nair added" })).toBeDisabled();
+    fireEvent.change(search, { target: { value: INITIAL_THREADS[1].person.handle.toUpperCase() } });
+    fireEvent.click(screen.getByRole("button", { name: "Add Lucas Torres" }));
+    expect(within(screen.getByRole("list", { name: "Selected recipients" })).getByText("Priya Nair")).toBeInTheDocument();
+    expect(screen.getByLabelText("Group name (optional)")).toBeInTheDocument();
+    fireEvent.change(search, { target: { value: "not-followed" } });
+    expect(screen.getByRole("status")).toHaveTextContent("No followed hikers match");
+    expect(screen.getByRole("button", { name: "Remove Lucas Torres" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Remove Lucas Torres" }));
+    expect(screen.queryByLabelText("Group name (optional)")).not.toBeInTheDocument();
     expect(createGroupConversation).not.toHaveBeenCalled();
   });
 
@@ -119,46 +131,128 @@ describe("ChatsView", () => {
       return group;
     });
     setup([], { contacts: groupMembers.slice(1) });
-    fireEvent.click(screen.getByRole("button", { name: "New group chat" }));
-    fireEvent.change(screen.getByLabelText("Group name"), { target: { value: "  Weekend hikers  " } });
-    fireEvent.click(screen.getByRole("checkbox", { name: /Priya Nair/ }));
-    fireEvent.click(screen.getByRole("checkbox", { name: /Lucas Torres/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Create group" }));
+    fireEvent.click(screen.getByRole("button", { name: "New chat" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add Priya Nair" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add Lucas Torres" }));
+    fireEvent.change(screen.getByLabelText("Group name (optional)"), { target: { value: "  Weekend hikers  " } });
+    fireEvent.click(screen.getByRole("button", { name: "Start chat" }));
     await waitFor(() => expect(createGroupConversation).toHaveBeenCalledWith("Weekend hikers", ["priya", "lucas"]));
     expect(await screen.findByRole("heading", { name: "Weekend hikers" })).toBeInTheDocument();
     expect(screen.getByLabelText("Message")).toBeInTheDocument();
-    expect(screen.queryByRole("form", { name: "Create group chat" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "New chat" })).not.toBeInTheDocument();
+    expect(startConversation).not.toHaveBeenCalled();
     expect(list()).toHaveClass("hidden");
   });
 
-  it("enforces the 15-member limit including the creator", () => {
+  it("enforces the 15-member limit including the creator and caps automatic group names", async () => {
     const contacts: ChatPerson[] = Array.from({ length: 15 }, (_, index) => ({
       id: `hiker-${index}`, name: `Hiker ${index}`, handle: `@hiker${index}`, initials: "H", tone: "moss",
     }));
+    createGroupConversation.mockImplementation(async (name) =>
+      groupThread({ name, members: [ME, ...contacts.slice(1)] }));
     setup([], { contacts });
-    fireEvent.click(screen.getByRole("button", { name: "New group chat" }));
+    fireEvent.click(screen.getByRole("button", { name: "New chat" }));
     for (let index = 0; index < 14; index++) {
-      fireEvent.click(screen.getByRole("checkbox", { name: new RegExp(`Hiker ${index} @hiker${index}$`) }));
+      fireEvent.click(screen.getByRole("button", { name: `Add Hiker ${index}` }));
     }
-    expect(screen.getByText("15 / 15 members")).toBeInTheDocument();
-    expect(screen.getByRole("checkbox", { name: /Hiker 14 @hiker14/ })).toBeDisabled();
-    fireEvent.click(screen.getByRole("checkbox", { name: /Hiker 0 @hiker0/ }));
-    expect(screen.getByRole("checkbox", { name: /Hiker 14 @hiker14/ })).toBeEnabled();
+    expect(screen.getByText("14 / 14 recipients (up to 15 members including you)")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add Hiker 14" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Remove Hiker 0" }));
+    expect(screen.getByRole("button", { name: "Add Hiker 14" })).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: "Add Hiker 14" }));
+    expect(within(screen.getByRole("list", { name: "Selected recipients" })).getAllByRole("listitem")).toHaveLength(14);
+    fireEvent.click(screen.getByRole("button", { name: "Start chat" }));
+    const name = contacts.slice(1).map((person) => person.name).join(", ").slice(0, 100);
+    await waitFor(() => expect(createGroupConversation).toHaveBeenCalledWith(name, contacts.slice(1).map((person) => person.id)));
+    expect(name).toHaveLength(100);
   });
 
   it("keeps the form and selections when group creation fails", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     createGroupConversation.mockRejectedValue(new Error("database unavailable"));
     setup([], { contacts: groupMembers.slice(1) });
-    fireEvent.click(screen.getByRole("button", { name: "New group chat" }));
-    fireEvent.change(screen.getByLabelText("Group name"), { target: { value: "Weekend hikers" } });
-    fireEvent.click(screen.getByRole("checkbox", { name: /Priya Nair/ }));
-    fireEvent.click(screen.getByRole("checkbox", { name: /Lucas Torres/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Create group" }));
+    fireEvent.click(screen.getByRole("button", { name: "New chat" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add Priya Nair" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add Lucas Torres" }));
+    fireEvent.change(screen.getByLabelText("Group name (optional)"), { target: { value: "Weekend hikers" } });
+    fireEvent.click(screen.getByRole("button", { name: "Start chat" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Could not complete this action");
-    expect(screen.getByLabelText("Group name")).toHaveValue("Weekend hikers");
-    expect(screen.getByRole("checkbox", { name: /Priya Nair/ })).toBeChecked();
+    expect(screen.getByLabelText("Group name (optional)")).toHaveValue("Weekend hikers");
+    expect(screen.getByRole("button", { name: "Remove Priya Nair" })).toBeInTheDocument();
     expect(within(list()).queryByText("Weekend hikers")).not.toBeInTheDocument();
+  });
+
+  it("creates a group named after its recipients without requiring a group name", async () => {
+    createGroupConversation.mockImplementation(async (name) => groupThread({ name }));
+    setup([], { contacts: groupMembers.slice(1) });
+    fireEvent.click(screen.getByRole("button", { name: "New chat" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add Priya Nair" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add Lucas Torres" }));
+    fireEvent.click(screen.getByRole("button", { name: "Start chat" }));
+    await waitFor(() => expect(createGroupConversation).toHaveBeenCalledWith("Priya Nair, Lucas Torres", ["priya", "lucas"]));
+    expect(await screen.findByRole("heading", { name: "Priya Nair, Lucas Torres" })).toBeInTheDocument();
+  });
+
+  it("cancels the picker without creating a chat, resets selections, and restores focus", () => {
+    setup([], { contacts: groupMembers.slice(1) });
+    const newChat = screen.getByRole("button", { name: "New chat" });
+    newChat.focus();
+    fireEvent.click(newChat);
+    fireEvent.click(screen.getByRole("button", { name: "Add Priya Nair" }));
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByRole("dialog", { name: "New chat" })).not.toBeInTheDocument();
+    expect(newChat).toHaveFocus();
+    fireEvent.click(newChat);
+    expect(screen.queryByRole("list", { name: "Selected recipients" })).not.toBeInTheDocument();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog", { name: "New chat" })).not.toBeInTheDocument();
+    expect(startConversation).not.toHaveBeenCalled();
+    expect(createGroupConversation).not.toHaveBeenCalled();
+  });
+
+  it("keeps keyboard focus inside the picker", () => {
+    setup([], { contacts: groupMembers.slice(1) });
+    fireEvent.click(screen.getByRole("button", { name: "New chat" }));
+    const search = screen.getByRole("searchbox", { name: "Search hikers you follow" });
+    const cancel = screen.getByRole("button", { name: "Cancel" });
+    fireEvent.keyDown(search, { key: "Tab", shiftKey: true });
+    expect(cancel).toHaveFocus();
+    fireEvent.keyDown(cancel, { key: "Tab" });
+    expect(search).toHaveFocus();
+    screen.getByRole("button", { name: "New chat" }).focus();
+    fireEvent.keyDown(document, { key: "Tab" });
+    expect(search).toHaveFocus();
+  });
+
+  it("blocks duplicate submissions and closing the picker while saving", async () => {
+    let finish!: (group: GroupChatThread) => void;
+    createGroupConversation.mockReturnValue(new Promise<GroupChatThread>((resolve) => { finish = resolve; }));
+    setup([], { contacts: groupMembers.slice(1) });
+    fireEvent.click(screen.getByRole("button", { name: "New chat" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add Priya Nair" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add Lucas Torres" }));
+    fireEvent.click(screen.getByRole("button", { name: "Start chat" }));
+    await waitFor(() => expect(createGroupConversation).toHaveBeenCalledOnce());
+    expect(screen.getByRole("button", { name: "Starting..." })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
+    fireEvent.keyDown(document, { key: "Tab" });
+    expect(screen.getByRole("form", { name: "Start a new chat" })).toHaveFocus();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.getByRole("dialog", { name: "New chat" })).toBeInTheDocument();
+    await act(async () => finish(groupThread()));
+    expect(screen.queryByRole("dialog", { name: "New chat" })).not.toBeInTheDocument();
+    expect(createGroupConversation).toHaveBeenCalledOnce();
+  });
+
+  it("checks the session before starting a new chat", async () => {
+    hasActiveSession.mockResolvedValue(false);
+    setup([], { contacts: groupMembers.slice(1) });
+    fireEvent.click(screen.getByRole("button", { name: "New chat" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add Priya Nair" }));
+    fireEvent.click(screen.getByRole("button", { name: "Start chat" }));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/login"));
+    expect(startConversation).not.toHaveBeenCalled();
+    expect(createGroupConversation).not.toHaveBeenCalled();
   });
 
   it("shows group members and identifies each incoming sender", () => {
@@ -238,11 +332,15 @@ describe("ChatsView", () => {
       return thread.id;
     });
     setup([], { contacts: [thread.person] });
-    fireEvent.click(screen.getByRole("button", { name: `Message ${thread.person.name}` }));
+    fireEvent.click(screen.getByRole("button", { name: "New chat" }));
+    fireEvent.click(screen.getByRole("button", { name: `Add ${thread.person.name}` }));
+    fireEvent.click(screen.getByRole("button", { name: "Start chat" }));
     await waitFor(() => expect(startConversation).toHaveBeenCalledWith(thread.person.id));
     expect(await screen.findByRole("heading", { name: thread.person.name })).toBeInTheDocument();
     expect(screen.queryByText("HIKE PROPOSAL")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Message")).toBeInTheDocument();
+    expect(createGroupConversation).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog", { name: "New chat" })).not.toBeInTheDocument();
   });
 
   it("shows a database save error and retains the unsent draft", async () => {

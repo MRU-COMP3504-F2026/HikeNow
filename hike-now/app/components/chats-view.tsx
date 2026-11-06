@@ -7,7 +7,8 @@ import type { ChatPerson, ChatThread, MentionOption, TrailShare } from "../chats
 import ChatEmptyState from "./chat-empty-state";
 import ChatList from "./chat-list";
 import ChatThreadView from "./chat-thread";
-import GroupChatForm from "./group-chat-form";
+import NewChatForm from "./new-chat-form";
+import Modal from "./modal";
 import Button from "./button";
 
 export type ChatsViewProps = {
@@ -35,7 +36,7 @@ export default function ChatsView({
   const actionAuth = useAuthenticatedAction();
   // En móvil se ve la lista o la conversación, no las dos a la vez.
   const [threadOpenOnMobile, setThreadOpenOnMobile] = useState(Boolean(initialThreadId));
-  const [creatingGroup, setCreatingGroup] = useState(false);
+  const [creatingChat, setCreatingChat] = useState(false);
 
   const noChats = chats.threads.length === 0;
   const { active } = chats;
@@ -45,46 +46,32 @@ export default function ChatsView({
       <div className="mb-4 flex justify-end">
         <Button
           variant="outline"
-          aria-expanded={creatingGroup}
+          aria-expanded={creatingChat}
+          aria-haspopup="dialog"
           disabled={actionAuth.pending}
-          onClick={() => setCreatingGroup((open) => !open)}
+          onClick={() => setCreatingChat(true)}
         >
-          New group chat
+          New chat
         </Button>
       </div>
-      {creatingGroup && (
-        <GroupChatForm
+      <Modal open={creatingChat} label="New chat" onClose={() => {
+        if (!actionAuth.pending) setCreatingChat(false);
+      }}>
+        {creatingChat && <NewChatForm
           contacts={contacts}
           pending={actionAuth.pending}
-          onCancel={() => setCreatingGroup(false)}
-          onCreate={(name, inviteeIds) => actionAuth.run(async () => {
-            await chats.createGroup(name, inviteeIds);
-            setCreatingGroup(false);
+          error={actionAuth.error}
+          onCancel={() => setCreatingChat(false)}
+          onCreate={(recipientIds, name) => actionAuth.run(async () => {
+            if (recipientIds.length === 1) await chats.start(recipientIds[0]);
+            else await chats.createGroup(name, recipientIds);
+            setCreatingChat(false);
             setThreadOpenOnMobile(true);
           })}
-        />
-      )}
-      {contacts.length > 0 && (
-        <section aria-label="Start a conversation" className="mb-4 flex flex-wrap items-center gap-2">
-          <h2 className="mr-2 text-nav font-semibold">Message a hiker you follow</h2>
-          {contacts.map((person) => (
-            <button
-              key={person.id}
-              type="button"
-              disabled={actionAuth.pending}
-              className="min-h-11 rounded-control border border-border-soft px-4 text-small text-primary"
-              onClick={() => { void actionAuth.run(async () => {
-                await chats.start(person.id);
-                setThreadOpenOnMobile(true);
-              }); }}
-            >
-              Message {person.name}
-            </button>
-          ))}
-        </section>
-      )}
-      {(actionAuth.error || chats.refreshError) && (
-        <p role="alert" className="mb-3 text-small text-danger">{actionAuth.error ?? chats.refreshError}</p>
+        />}
+      </Modal>
+      {((!creatingChat && actionAuth.error) || chats.refreshError) && (
+        <p role="alert" className="mb-3 text-small text-danger">{(!creatingChat && actionAuth.error) || chats.refreshError}</p>
       )}
     <section
       aria-label="Chats"

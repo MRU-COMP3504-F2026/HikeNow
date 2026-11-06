@@ -107,8 +107,12 @@ follow the sender or previously accepted the conversation. Accept, Delete (hide 
 your account), and Block are persisted; blocking prevents both participants sending
 further messages. Unblocking is not yet exposed.
 
-Choose **New group chat** in Chats, give the group a name, and select 2-14
-hikers you follow (3-15 members including you). Each group is saved separately,
+Choose **New chat** in Chats to open the recipient picker. Search the hikers
+you follow by name or handle, use **+** to add them to **To**, and remove
+recipients before starting if needed. Select one recipient for a direct chat
+(reusing an existing conversation), or 2-14 for a group (3-15 members including
+you). Group names are optional; by default the selected hikers' names are used.
+Each group is saved separately,
 even when it has the same members as another group. Invitees who follow the
 creator see the group in Messages; others see a request that they can accept
 or decline. Following the creator later also moves the invitation to Messages.
