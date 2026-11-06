@@ -7,6 +7,8 @@ import type { ChatPerson, ChatThread, MentionOption, TrailShare } from "../chats
 import ChatEmptyState from "./chat-empty-state";
 import ChatList from "./chat-list";
 import ChatThreadView from "./chat-thread";
+import GroupChatForm from "./group-chat-form";
+import Button from "./button";
 
 export type ChatsViewProps = {
   initialThreads: ChatThread[];
@@ -15,6 +17,8 @@ export type ChatsViewProps = {
   suggestions: { person: ChatPerson; reviewed: string }[];
   /** Usuario actual. */
   me: ChatPerson;
+  initialThreadId?: string;
+  contacts?: ChatPerson[];
 };
 
 /** Pestaña Chats completa: lista de conversaciones + conversación abierta. */
@@ -24,16 +28,64 @@ export default function ChatsView({
   mentionOptions,
   suggestions,
   me,
+  initialThreadId,
+  contacts = [],
 }: ChatsViewProps) {
-  const chats = useChats({ initialThreads, shareableTrails });
+  const chats = useChats({ initialThreads, initialThreadId, shareableTrails, userId: me.id });
   const actionAuth = useAuthenticatedAction();
   // En móvil se ve la lista o la conversación, no las dos a la vez.
-  const [threadOpenOnMobile, setThreadOpenOnMobile] = useState(false);
+  const [threadOpenOnMobile, setThreadOpenOnMobile] = useState(Boolean(initialThreadId));
+  const [creatingGroup, setCreatingGroup] = useState(false);
 
   const noChats = chats.threads.length === 0;
   const { active } = chats;
 
   return (
+    <div>
+      <div className="mb-4 flex justify-end">
+        <Button
+          variant="outline"
+          aria-expanded={creatingGroup}
+          disabled={actionAuth.pending}
+          onClick={() => setCreatingGroup((open) => !open)}
+        >
+          New group chat
+        </Button>
+      </div>
+      {creatingGroup && (
+        <GroupChatForm
+          contacts={contacts}
+          pending={actionAuth.pending}
+          onCancel={() => setCreatingGroup(false)}
+          onCreate={(name, inviteeIds) => actionAuth.run(async () => {
+            await chats.createGroup(name, inviteeIds);
+            setCreatingGroup(false);
+            setThreadOpenOnMobile(true);
+          })}
+        />
+      )}
+      {contacts.length > 0 && (
+        <section aria-label="Start a conversation" className="mb-4 flex flex-wrap items-center gap-2">
+          <h2 className="mr-2 text-nav font-semibold">Message a hiker you follow</h2>
+          {contacts.map((person) => (
+            <button
+              key={person.id}
+              type="button"
+              disabled={actionAuth.pending}
+              className="min-h-11 rounded-control border border-border-soft px-4 text-small text-primary"
+              onClick={() => { void actionAuth.run(async () => {
+                await chats.start(person.id);
+                setThreadOpenOnMobile(true);
+              }); }}
+            >
+              Message {person.name}
+            </button>
+          ))}
+        </section>
+      )}
+      {(actionAuth.error || chats.refreshError) && (
+        <p role="alert" className="mb-3 text-small text-danger">{actionAuth.error ?? chats.refreshError}</p>
+      )}
     <section
       aria-label="Chats"
       className="flex overflow-hidden rounded-control border border-border-soft"
@@ -52,7 +104,7 @@ export default function ChatsView({
           setThreadOpenOnMobile(false);
         }}
         onSelect={(id) => {
-          chats.selectThread(id);
+          void actionAuth.run(() => chats.selectThread(id));
           setThreadOpenOnMobile(true);
         }}
       />
@@ -65,19 +117,30 @@ export default function ChatsView({
       >
         {active ? (
           <ChatThreadView
+            key={active.id}
             thread={active}
             me={me}
-            mentionOptions={mentionOptions}
+            mentionOptions={active.kind === "group"
+              ? active.members.filter((person) => person.id !== me.id).map((person) => ({ person, trail: "Group member" }))
+              : mentionOptions}
             onBack={() => setThreadOpenOnMobile(false)}
             onToggleFollow={() => { void actionAuth.run(() => chats.toggleFollow(active.id)); }}
             actionPending={actionAuth.pending}
             onAccept={() => { void actionAuth.run(() => chats.accept(active.id)); }}
             onDecline={() => {
-              void actionAuth.run(() => {
-                chats.decline(active.id);
+              void actionAuth.run(async () => {
+                await chats.decline(active.id);
                 setThreadOpenOnMobile(false);
               });
             }}
+            onBlock={() => { void actionAuth.run(async () => {
+              await chats.decline(active.id, true);
+              setThreadOpenOnMobile(false);
+            }); }}
+            onLeave={() => { void actionAuth.run(async () => {
+              await chats.decline(active.id, true);
+              setThreadOpenOnMobile(false);
+            }); }}
             onSend={(text) => actionAuth.run(() => chats.sendText(text))}
             onShareTrail={() => { void actionAuth.run(chats.shareTrail); }}
             onProposeHike={() => { void actionAuth.run(chats.proposeHike); }}
@@ -91,8 +154,8 @@ export default function ChatsView({
             <p className="text-nav text-text-subtle">Pick a conversation from the list.</p>
           </div>
         )}
-        {actionAuth.error && <p role="alert" className="p-3 text-small text-danger">{actionAuth.error}</p>}
       </div>
     </section>
+    </div>
   );
 }

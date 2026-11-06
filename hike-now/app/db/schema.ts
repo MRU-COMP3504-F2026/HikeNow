@@ -8,9 +8,14 @@ import {
   timestamp,
   uniqueIndex,
   integer,
+  boolean,
+  jsonb,
+  index,
+  check,
   pgPolicy 
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+import type { ChatContent, Rsvp } from "../chats/types";
 
 // 1. HIKER 
 export const hiker = pgTable(
@@ -36,6 +41,47 @@ export const hiker = pgTable(
     }),
   ]
 ).enableRLS();
+
+export const conversation = pgTable("conversation", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  kind: varchar("kind", { length: 10, enum: ["direct", "group"] }).notNull().default("direct"),
+  hikerLow: uuid("hiker_low").references(() => hiker.id, { onDelete: "cascade" }),
+  hikerHigh: uuid("hiker_high").references(() => hiker.id, { onDelete: "cascade" }),
+  groupName: varchar("group_name", { length: 100 }),
+  createdBy: uuid("created_by").references(() => hiker.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("conversation_pair_unique").on(table.hikerLow, table.hikerHigh),
+  check("conversation_details_check", sql`
+    (${table.kind} = 'direct' AND ${table.hikerLow} IS NOT NULL AND ${table.hikerHigh} IS NOT NULL
+      AND ${table.hikerLow} < ${table.hikerHigh} AND ${table.groupName} IS NULL AND ${table.createdBy} IS NULL)
+    OR (${table.kind} = 'group' AND ${table.hikerLow} IS NULL AND ${table.hikerHigh} IS NULL
+      AND ${table.groupName} IS NOT NULL AND length(btrim(${table.groupName})) > 0)
+  `),
+]).enableRLS();
+
+export const conversationMember = pgTable("conversation_member", {
+  conversationId: uuid("conversation_id").notNull().references(() => conversation.id, { onDelete: "cascade" }),
+  hikerId: uuid("hiker_id").notNull().references(() => hiker.id, { onDelete: "cascade" }),
+  accepted: boolean("accepted").notNull().default(false),
+  hidden: boolean("hidden").notNull().default(false),
+  blocked: boolean("blocked").notNull().default(false),
+  readAt: timestamp("read_at", { withTimezone: true }),
+}, (table) => [
+  primaryKey({ columns: [table.conversationId, table.hikerId] }),
+  index("conversation_member_hiker_idx").on(table.hikerId),
+]).enableRLS();
+
+export const chatMessage = pgTable("chat_message", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  conversationId: uuid("conversation_id").notNull().references(() => conversation.id, { onDelete: "cascade" }),
+  senderId: uuid("sender_id").notNull().references(() => hiker.id, { onDelete: "cascade" }),
+  content: jsonb("content").$type<ChatContent>().notNull(),
+  responses: jsonb("responses").$type<Record<string, Rsvp>>().notNull().default({}),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("chat_message_conversation_idx").on(table.conversationId, table.createdAt),
+]).enableRLS();
 
 export const hikerSession = pgTable("hiker_session", {
   tokenHash: varchar("token_hash", { length: 64 }).primaryKey(),

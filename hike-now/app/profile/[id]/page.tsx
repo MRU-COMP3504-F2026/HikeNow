@@ -120,7 +120,17 @@ async function ProfileContent({ params }: PageProps) {
             { label: "Followers", value: followers.length },
             { label: "Following", value: following.length },
           ]}
-          action={isOwnProfile ? undefined : <FollowButton name={displayName} />}
+          action={isOwnProfile ? undefined : (
+            <div className="flex flex-wrap gap-2">
+              <FollowButton
+                key={hiker.id}
+                name={displayName}
+                followerId={currentUser?.id}
+                followeeId={hiker.id}
+                initialFollowing={followers.some((row) => row.followerId === currentUser?.id)}
+              />
+            </div>
+          )}
           className="mb-10"
         />
 

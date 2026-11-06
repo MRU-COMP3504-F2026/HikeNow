@@ -1,7 +1,6 @@
-import type { ChatPerson, ChatThread, MentionOption, TrailShare } from "./types";
+import type { ChatPerson, DirectChatThread, MentionOption, TrailShare } from "./types";
 
-// DATOS DE EJEMPLO: todavía no hay tabla de mensajes en la base de datos.
-// Cuando exista, estas constantes se sustituyen por la consulta real.
+// Example conversations used by component tests, not by the live chat page.
 
 /** Usuario actual (el mismo que se muestra en la barra de navegación). */
 export const ME: ChatPerson = {
@@ -73,8 +72,9 @@ export const MENTION_OPTIONS: MentionOption[] = [
   { person: daniel, trail: "Johnston Canyon · Sep 14" },
 ];
 
-export const INITIAL_THREADS: ChatThread[] = [
+export const INITIAL_THREADS: DirectChatThread[] = [
   {
+    kind: "direct",
     id: "priya",
     person: priya,
     following: true,
@@ -102,6 +102,7 @@ export const INITIAL_THREADS: ChatThread[] = [
     ],
   },
   {
+    kind: "direct",
     id: "lucas",
     person: lucas,
     following: true,
@@ -116,6 +117,7 @@ export const INITIAL_THREADS: ChatThread[] = [
     ],
   },
   {
+    kind: "direct",
     id: "hana",
     person: hana,
     following: true,
@@ -131,6 +133,7 @@ export const INITIAL_THREADS: ChatThread[] = [
     ],
   },
   {
+    kind: "direct",
     id: "marcus",
     person: marcus,
     following: true,
@@ -144,6 +147,7 @@ export const INITIAL_THREADS: ChatThread[] = [
     ],
   },
   {
+    kind: "direct",
     id: "sofia",
     person: sofia,
     following: false,
@@ -157,6 +161,7 @@ export const INITIAL_THREADS: ChatThread[] = [
     ],
   },
   {
+    kind: "direct",
     id: "daniel",
     person: daniel,
     following: false,

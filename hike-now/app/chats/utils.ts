@@ -1,5 +1,14 @@
 import type { ChatThread, MessagePart } from "./types";
 
+export function chatName(thread: ChatThread): string {
+  return thread.kind === "group" ? thread.name : thread.person.name;
+}
+
+export function chatInitials(thread: ChatThread): string {
+  if (thread.kind === "direct") return thread.person.initials;
+  return thread.name.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+}
+
 /** Una mención es "@" + letra + letras, números, "_" o ".". */
 const MENTION = /(@[A-Za-z][\w.]*)/g;
 
@@ -15,7 +24,8 @@ export function parseMentions(text: string): MessagePart[] {
 export function previewOf(thread: ChatThread): string {
   const last = thread.messages[thread.messages.length - 1];
   if (!last) return "";
-  const prefix = last.from === "me" ? "You: " : "";
+  const prefix = last.from === "me" ? "You: " :
+    thread.kind === "group" && last.sender ? `${last.sender.name}: ` : "";
   switch (last.kind) {
     case "trail":
       return `${prefix}Shared a trail: ${last.trail.name}`;

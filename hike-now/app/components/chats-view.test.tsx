@@ -7,15 +7,55 @@ import {
   SHAREABLE_TRAILS,
   SUGGESTED_HIKERS,
 } from "../chats/mock-data";
-import type { ChatThread } from "../chats/types";
-import ChatsView from "./chats-view";
+import type { ChatPerson, ChatThread, GroupChatThread } from "../chats/types";
+import ChatsView, { type ChatsViewProps } from "./chats-view";
 
-const { hasActiveSession, push } = vi.hoisted(() => ({ hasActiveSession: vi.fn(), push: vi.fn() }));
+const { hasActiveSession, push, getChatThreads, markChatRead, sendChatMessage, updateChatRequest, respondToProposal, startConversation, createGroupConversation, followUser, unfollowUser } = vi.hoisted(() => ({
+  hasActiveSession: vi.fn(), push: vi.fn(), getChatThreads: vi.fn(), markChatRead: vi.fn(),
+  sendChatMessage: vi.fn(), updateChatRequest: vi.fn(), respondToProposal: vi.fn(),
+  startConversation: vi.fn(), createGroupConversation: vi.fn(), followUser: vi.fn(), unfollowUser: vi.fn(),
+}));
+vi.mock("../actions/chats", () => ({ getChatThreads, markChatRead, sendChatMessage, updateChatRequest, respondToProposal, startConversation, createGroupConversation }));
+vi.mock("../actions/follows", () => ({ followUser, unfollowUser }));
 vi.mock("@/app/actions/auth", () => ({ hasActiveSession }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
+let stored: ChatThread[];
 beforeEach(() => {
   vi.resetAllMocks();
   hasActiveSession.mockResolvedValue(true);
+  getChatThreads.mockImplementation(async () => structuredClone(stored));
+  markChatRead.mockImplementation(async (id) => {
+    stored = stored.map((thread) => thread.id === id ? { ...thread, unread: false } : thread);
+  });
+  updateChatRequest.mockImplementation(async (id, action) => {
+    stored = action === "accept"
+      ? stored.map((thread) => thread.id === id ? { ...thread, isRequest: false } : thread)
+      : stored.filter((thread) => thread.id !== id);
+  });
+  unfollowUser.mockImplementation(async (_, personId) => {
+    stored = stored.map((thread) => thread.kind === "direct" && thread.person.id === personId ? { ...thread, following: false } : thread);
+  });
+  followUser.mockImplementation(async (_, personId) => {
+    stored = stored.map((thread) => thread.kind === "direct" && thread.person.id === personId ? { ...thread, following: true } : thread);
+  });
+  sendChatMessage.mockImplementation(async (id, input) => {
+    stored = stored.map((thread) => thread.id === id ? {
+      ...thread,
+      messages: [...thread.messages, {
+        id: `saved-${thread.messages.length}`, from: "me",
+        ...(input.kind === "text" ? { kind: "text", text: input.text } :
+          input.kind === "trail" ? { kind: "trail", trail: SHAREABLE_TRAILS.find((trail) => trail.id === input.trailId)! } :
+          { kind: "proposal", proposal: { trailName: "Trail", when: "Saturday", where: "Trailhead", going: [], rsvp: "yes" } }),
+      }],
+    } : thread);
+    return stored.find((thread) => thread.id === id)!.messages.at(-1);
+  });
+  respondToProposal.mockImplementation(async (id, messageId, value) => {
+    stored = stored.map((thread) => thread.id === id ? {
+      ...thread, messages: thread.messages.map((message) => message.id === messageId && message.kind === "proposal"
+        ? { ...message, proposal: { ...message.proposal, rsvp: value } } : message),
+    } : thread);
+  });
 });
 
 vi.mock("next/link", () => ({
@@ -27,7 +67,8 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-function setup(threads: ChatThread[] = INITIAL_THREADS) {
+function setup(threads: ChatThread[] = INITIAL_THREADS, options: Pick<ChatsViewProps, "contacts" | "initialThreadId"> = {}) {
+  stored = structuredClone(threads);
   return render(
     <ChatsView
       initialThreads={threads}
@@ -35,13 +76,200 @@ function setup(threads: ChatThread[] = INITIAL_THREADS) {
       mentionOptions={MENTION_OPTIONS}
       suggestions={SUGGESTED_HIKERS}
       me={ME}
+      {...options}
     />,
   );
 }
 
 const list = () => screen.getByRole("complementary", { name: "Conversations" });
 
+const groupMembers = [ME, INITIAL_THREADS[0].person, INITIAL_THREADS[1].person];
+function groupThread(overrides: Partial<GroupChatThread> = {}): GroupChatThread {
+  return {
+    id: "group-id", kind: "group", name: "Weekend hikers", creator: ME, members: groupMembers,
+    isRequest: false, time: "", unread: false, context: "3 members", messages: [], ...overrides,
+  };
+}
+
 describe("ChatsView", () => {
+  it("explains how to create a group when fewer than two hikers are followed", () => {
+    setup([], { contacts: [INITIAL_THREADS[0].person] });
+    fireEvent.click(screen.getByRole("button", { name: "New group chat" }));
+    expect(screen.getByText(/Follow at least two hikers/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Find hikers" })).toHaveAttribute("href", "/search");
+    expect(screen.getByRole("button", { name: "Create group" })).toBeDisabled();
+  });
+
+  it("validates the group name and requires two invitees", () => {
+    setup([], { contacts: groupMembers.slice(1) });
+    fireEvent.click(screen.getByRole("button", { name: "New group chat" }));
+    fireEvent.click(screen.getByRole("button", { name: "Create group" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("Enter a group name");
+    fireEvent.change(screen.getByLabelText("Group name"), { target: { value: "Weekend hikers" } });
+    fireEvent.click(screen.getByRole("checkbox", { name: /Priya Nair/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Create group" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("between 2 and 14");
+    expect(createGroupConversation).not.toHaveBeenCalled();
+  });
+
+  it("creates and immediately opens a group with followed hikers", async () => {
+    createGroupConversation.mockImplementation(async () => {
+      const group = groupThread();
+      stored = [group];
+      return group;
+    });
+    setup([], { contacts: groupMembers.slice(1) });
+    fireEvent.click(screen.getByRole("button", { name: "New group chat" }));
+    fireEvent.change(screen.getByLabelText("Group name"), { target: { value: "  Weekend hikers  " } });
+    fireEvent.click(screen.getByRole("checkbox", { name: /Priya Nair/ }));
+    fireEvent.click(screen.getByRole("checkbox", { name: /Lucas Torres/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Create group" }));
+    await waitFor(() => expect(createGroupConversation).toHaveBeenCalledWith("Weekend hikers", ["priya", "lucas"]));
+    expect(await screen.findByRole("heading", { name: "Weekend hikers" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Message")).toBeInTheDocument();
+    expect(screen.queryByRole("form", { name: "Create group chat" })).not.toBeInTheDocument();
+    expect(list()).toHaveClass("hidden");
+  });
+
+  it("enforces the 15-member limit including the creator", () => {
+    const contacts: ChatPerson[] = Array.from({ length: 15 }, (_, index) => ({
+      id: `hiker-${index}`, name: `Hiker ${index}`, handle: `@hiker${index}`, initials: "H", tone: "moss",
+    }));
+    setup([], { contacts });
+    fireEvent.click(screen.getByRole("button", { name: "New group chat" }));
+    for (let index = 0; index < 14; index++) {
+      fireEvent.click(screen.getByRole("checkbox", { name: new RegExp(`Hiker ${index} @hiker${index}$`) }));
+    }
+    expect(screen.getByText("15 / 15 members")).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: /Hiker 14 @hiker14/ })).toBeDisabled();
+    fireEvent.click(screen.getByRole("checkbox", { name: /Hiker 0 @hiker0/ }));
+    expect(screen.getByRole("checkbox", { name: /Hiker 14 @hiker14/ })).toBeEnabled();
+  });
+
+  it("keeps the form and selections when group creation fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    createGroupConversation.mockRejectedValue(new Error("database unavailable"));
+    setup([], { contacts: groupMembers.slice(1) });
+    fireEvent.click(screen.getByRole("button", { name: "New group chat" }));
+    fireEvent.change(screen.getByLabelText("Group name"), { target: { value: "Weekend hikers" } });
+    fireEvent.click(screen.getByRole("checkbox", { name: /Priya Nair/ }));
+    fireEvent.click(screen.getByRole("checkbox", { name: /Lucas Torres/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Create group" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Could not complete this action");
+    expect(screen.getByLabelText("Group name")).toHaveValue("Weekend hikers");
+    expect(screen.getByRole("checkbox", { name: /Priya Nair/ })).toBeChecked();
+    expect(within(list()).queryByText("Weekend hikers")).not.toBeInTheDocument();
+  });
+
+  it("shows group members and identifies each incoming sender", () => {
+    const group = groupThread({
+      messages: [
+        { id: "a", from: "them", sender: groupMembers[1], kind: "text", text: "Hello from Priya" },
+        { id: "b", from: "them", sender: groupMembers[2], kind: "text", text: "Hello from Lucas" },
+      ],
+    });
+    setup([group]);
+    expect(screen.getByRole("heading", { name: "Weekend hikers" })).toBeInTheDocument();
+    expect(within(list()).getByText("Lucas Torres: Hello from Lucas")).toBeInTheDocument();
+    expect(screen.getByText("Hello from Priya")).toBeInTheDocument();
+    expect(screen.getAllByText("Priya Nair").some((element) => element.tagName === "SPAN")).toBe(true);
+    fireEvent.click(screen.getByText("View members"));
+    expect(screen.getByRole("link", { name: "Lucas Torres" })).toHaveAttribute("href", "/profile/lucas");
+    expect(screen.queryByRole("button", { name: /Unfollow/ })).not.toBeInTheDocument();
+  });
+
+  it("lets a recipient accept or decline a group request", async () => {
+    const invitation = groupThread({ creator: groupMembers[1], isRequest: true });
+    setup([invitation]);
+    getChatThreads.mockRejectedValue(new Error("refresh unavailable"));
+    fireEvent.click(screen.getByRole("tab", { name: /Requests/ }));
+    expect(screen.getByText("Priya Nair invited you to this group")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Block" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Accept" }));
+    await waitFor(() => expect(updateChatRequest).toHaveBeenCalledWith("group-id", "accept"));
+    expect(await screen.findByLabelText("Message")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("declines a group invitation without blocking other members", async () => {
+    setup([groupThread({ creator: groupMembers[1], isRequest: true })]);
+    fireEvent.click(screen.getByRole("tab", { name: /Requests/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Decline" }));
+    await waitFor(() => expect(updateChatRequest).toHaveBeenCalledWith("group-id", "delete"));
+    expect(screen.queryByRole("heading", { name: "Weekend hikers" })).not.toBeInTheDocument();
+  });
+
+  it("requires confirmation before leaving a group", async () => {
+    setup([groupThread()]);
+    fireEvent.click(screen.getByRole("button", { name: "Leave group" }));
+    expect(screen.getByRole("group", { name: "Confirm leaving group" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(updateChatRequest).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Leave group" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm leave" }));
+    await waitFor(() => expect(updateChatRequest).toHaveBeenCalledWith("group-id", "block"));
+  });
+
+  it("refreshes incoming database messages every ten seconds", async () => {
+    vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+    try {
+      setup([{ ...INITIAL_THREADS[0], unread: false }]);
+      stored[0].messages.push({ id: "incoming", from: "them", kind: "text", text: "New incoming message" });
+      await act(async () => { await vi.advanceTimersByTimeAsync(9999); });
+      expect(screen.queryByText("New incoming message")).not.toBeInTheDocument();
+      await act(async () => { await vi.advanceTimersByTimeAsync(1); });
+      expect(screen.getAllByText("New incoming message")).toHaveLength(2);
+      expect(getChatThreads).toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("opens the conversation selected from a profile, including on mobile", () => {
+    setup(INITIAL_THREADS, { initialThreadId: INITIAL_THREADS[1].id });
+    expect(screen.getByRole("heading", { name: INITIAL_THREADS[1].person.name })).toBeInTheDocument();
+    expect(list()).toHaveClass("hidden");
+  });
+
+  it("starts a saved conversation with a followed hiker from an empty inbox", async () => {
+    const thread = INITIAL_THREADS[0];
+    startConversation.mockImplementation(async () => {
+      stored = [{ ...thread, unread: false, messages: [] }];
+      return thread.id;
+    });
+    setup([], { contacts: [thread.person] });
+    fireEvent.click(screen.getByRole("button", { name: `Message ${thread.person.name}` }));
+    await waitFor(() => expect(startConversation).toHaveBeenCalledWith(thread.person.id));
+    expect(await screen.findByRole("heading", { name: thread.person.name })).toBeInTheDocument();
+    expect(screen.queryByText("HIKE PROPOSAL")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Message")).toBeInTheDocument();
+  });
+
+  it("shows a database save error and retains the unsent draft", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    sendChatMessage.mockRejectedValue(new Error("database unavailable"));
+    setup();
+    const input = screen.getByLabelText("Message");
+    fireEvent.change(input, { target: { value: "Keep my draft" } });
+    fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Could not complete this action");
+    expect(input).toHaveValue("Keep my draft");
+    expect(screen.queryByText("Keep my draft")).not.toBeInTheDocument();
+  });
+
+  it("persists blocking separately from deleting a request", async () => {
+    setup();
+    fireEvent.click(screen.getByRole("tab", { name: /Requests/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Block" }));
+    await waitFor(() => expect(updateChatRequest).toHaveBeenCalledWith(INITIAL_THREADS.find((thread) => thread.isRequest)!.id, "block"));
+  });
+
+  it("does not offer a composer in a blocked conversation", () => {
+    setup([{ ...INITIAL_THREADS[0], blocked: true }]);
+    expect(screen.getByRole("status")).toHaveTextContent("conversation is blocked");
+    expect(screen.queryByLabelText("Message")).not.toBeInTheDocument();
+  });
+
   it("opens the first conversation and lists the others", () => {
     setup();
 
@@ -56,15 +284,16 @@ describe("ChatsView", () => {
     expect(screen.getByLabelText("2 pending")).toBeInTheDocument();
   });
 
-  it("switches conversations and clears the unread dot", () => {
+  it("switches conversations and clears the unread dot", async () => {
     setup();
     expect(within(list()).getByLabelText("Unread")).toBeInTheDocument();
 
     fireEvent.click(within(list()).getByRole("button", { name: /Lucas Torres/ }));
 
-    expect(screen.getByRole("heading", { name: "Lucas Torres" })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Lucas Torres" })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("button", { name: "Unfollow Lucas Torres" })).toBeEnabled());
     fireEvent.click(within(list()).getByRole("button", { name: /Priya Nair/ }));
-    expect(within(list()).queryByLabelText("Unread")).not.toBeInTheDocument();
+    await waitFor(() => expect(within(list()).queryByLabelText("Unread")).not.toBeInTheDocument());
   });
 
   it("filters conversations with the search box", () => {
@@ -287,9 +516,7 @@ describe("ChatsView", () => {
     expect(screen.getByRole("heading", { name: "Find someone to hike with" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Browse trails" })).toHaveAttribute("href", "/");
 
-    fireEvent.click(screen.getByRole("button", { name: `Follow ${SUGGESTED_HIKERS[0].person.name}` }));
-    expect(
-      await screen.findByRole("button", { name: `Unfollow ${SUGGESTED_HIKERS[0].person.name}` }),
-    ).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: "View profile" })[0])
+      .toHaveAttribute("href", `/profile/${SUGGESTED_HIKERS[0].person.id}`);
   });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { previewOf } from "../chats/utils";
+import { chatInitials, chatName, previewOf } from "../chats/utils";
 import type { ChatTab, ChatThread } from "../chats/types";
 import Avatar from "./avatar";
 import { MessageIcon, SearchIcon } from "./icons";
@@ -127,11 +127,11 @@ export default function ChatList({
                           active ? "bg-primary/10" : "hover:bg-surface",
                         ].join(" ")}
                       >
-                        <Avatar initials={thread.person.initials} tone={thread.person.tone} />
+                        <Avatar initials={chatInitials(thread)} tone={thread.kind === "group" ? "moss" : thread.person.tone} />
                         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                           <span className="flex justify-between gap-2">
                             <span className={["text-nav text-text", thread.unread ? "font-bold" : "font-medium"].join(" ")}>
-                              {thread.person.name}
+                              {chatName(thread)}
                             </span>
                             <span className="text-small text-text-subtle">{thread.time}</span>
                           </span>

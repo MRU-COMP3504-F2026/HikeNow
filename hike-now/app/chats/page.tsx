@@ -1,37 +1,31 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { redirect } from "next/navigation";
 import ChatsView from "../components/chats-view";
 import Footer from "../components/footer";
 import Navbar from "../components/session-navbar";
-import { getCurrentUser } from "../lib/session";
-import {
-  INITIAL_THREADS,
-  ME,
-  MENTION_OPTIONS,
-  SHAREABLE_TRAILS,
-  SUGGESTED_HIKERS,
-} from "./mock-data";
+import { getChatData } from "../actions/chats";
 
 export const metadata: Metadata = {
   title: "Chats | Hike Now",
 };
 
-async function ChatsContent() {
-  if (!await getCurrentUser()) redirect("/login");
+async function ChatsContent({ searchParams }: { searchParams: Promise<{ thread?: string }> }) {
+  const [data, params] = await Promise.all([getChatData(), searchParams]);
 
   return (
     <ChatsView
-      initialThreads={INITIAL_THREADS}
-      shareableTrails={SHAREABLE_TRAILS}
-      mentionOptions={MENTION_OPTIONS}
-      suggestions={SUGGESTED_HIKERS}
-      me={ME}
+      initialThreads={data.threads}
+      initialThreadId={params.thread}
+      contacts={data.contacts}
+      shareableTrails={data.trails}
+      mentionOptions={data.contacts.map((person) => ({ person, trail: "Following" }))}
+      suggestions={[]}
+      me={data.me}
     />
   );
 }
 
-export default function ChatsPage() {
+export default function ChatsPage({ searchParams }: { searchParams: Promise<{ thread?: string }> }) {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Navbar />
@@ -42,7 +36,7 @@ export default function ChatsPage() {
         </h1>
 
         <Suspense fallback={<p role="status" className="text-text-subtle">Loading chats...</p>}>
-          <ChatsContent />
+          <ChatsContent searchParams={searchParams} />
         </Suspense>
       </main>
 

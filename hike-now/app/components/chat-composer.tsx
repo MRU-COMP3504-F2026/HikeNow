@@ -102,7 +102,7 @@ export default function ChatComposer({
           className="absolute bottom-[calc(100%+8px)] left-4 z-10 w-[min(21rem,calc(100%-2rem))] rounded-control border border-border bg-background p-2 shadow-lg"
         >
           <p className="px-2 pt-1 pb-2 text-small font-semibold tracking-wide text-text-subtle">
-            PEOPLE YOU HIKED WITH
+            HIKERS
           </p>
           {mentionOptions.map((option) => (
             <button
@@ -145,6 +145,7 @@ export default function ChatComposer({
           onKeyDown={onKeyDown}
           placeholder="Write a message, type @ to mention"
           aria-label="Message"
+          maxLength={4000}
           disabled={actionPending}
           className="h-11 min-w-0 flex-1 rounded-control border border-field-border bg-background px-3.5 text-nav text-text placeholder:text-text-subtle focus-visible:outline-2 focus-visible:outline-primary"
         />

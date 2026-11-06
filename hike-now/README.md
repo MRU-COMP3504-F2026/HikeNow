@@ -38,8 +38,7 @@ Login/account creation is limited to ten attempts per normalized email per
 Rerun `db:auth` periodically to remove expired sessions and rate-limit records.
 
 This is application authentication, **not** a Supabase Auth JWT: it does not
-change `auth.uid()` or authenticate the optional Supabase client. Chats and
-follow controls that currently use mock behavior are otherwise unchanged.
+change `auth.uid()` or authenticate the optional Supabase client.
 Signed-out visitors are redirected to `/login` when opening chats, the
 following feed, or a review form, or when attempting to follow someone.
 Chat actions and follow controls recheck the session when used, including
@@ -78,6 +77,52 @@ current password. Database foreign keys cascade deletion to reviews,
 memberships, follows, and every session; the browser cookie is cleared and you
 are redirected to login. Uploaded storage objects are not deleted by database
 cascades and require a separate storage retention/cleanup policy.
+
+### Following, direct messages, and group chats
+
+Before deploying the chat changes, run the additive, transactional migration:
+
+```bash
+npm run db:chats
+```
+
+It creates private conversations, per-hiker request/read/block state, and messages,
+and upgrades existing direct conversations for group chats without replacing them.
+It is safe to rerun and uses the same server-only database connection as authentication.
+No mock conversations are imported. Deleting an account removes its direct
+conversations and authored messages; group chats remain available to their other members.
+
+Follow on a public profile now saves the relationship to PostgreSQL. Following
+shows a Message button; click it to open the existing conversation or create one.
+Chats also offers conversation starters for the hikers you follow.
+New conversations require following the recipient. Existing accepted conversations
+remain usable after unfollowing. Incoming messages appear in Requests unless you
+follow the sender or previously accepted the conversation. Accept, Delete (hide for
+your account), and Block are persisted; blocking prevents both participants sending
+further messages. Unblocking is not yet exposed.
+
+Choose **New group chat** in Chats, give the group a name, and select 2-14
+hikers you follow (3-15 members including you). Each group is saved separately,
+even when it has the same members as another group. Invitees who follow the
+creator see the group in Messages; others see a request that they can accept
+or decline. Following the creator later also moves the invitation to Messages.
+Group messages identify their sender, and hike proposals collect each member's
+RSVP. Group members can leave after confirmation; declining or leaving affects
+only that group and does not stop the remaining members from chatting. Leaving
+is permanent for that group; adding members or rejoining an existing group is
+not yet supported.
+
+Text messages (1-4000 characters), trail shares, hike proposals, and individual RSVPs
+are saved server-side. Trail cards use actual database trails. Chats refreshes every
+10 seconds while the page is visible, so incoming messages appear without reloading.
+All reads and mutations require a valid session; only participants can access a chat.
+Failed actions display an error and failed message saves retain the draft.
+
+Run the optional PostgreSQL integration tests with `CHAT_INTEGRATION=1 npm test --
+app/actions/chats.integration.test.ts app/actions/group-chats.integration.test.ts`
+after applying the migration. They create isolated test accounts/trails, exercise
+direct and group conversations, and remove only their own fixtures afterward.
+The regular `npm test` run skips these database tests.
 
 First, run the development server:
 
