@@ -14,9 +14,10 @@ export type ChatThreadViewProps = {
   /** Solo móvil: vuelve a la lista de chats. */
   onBack: () => void;
   onToggleFollow: () => void;
+  actionPending?: boolean;
   onAccept: () => void;
   onDecline: () => void;
-  onSend: (text: string) => void;
+  onSend: (text: string) => Promise<boolean>;
   onShareTrail: () => void;
   onProposeHike: () => void;
   onRsvp: (messageId: string, value: Rsvp) => void;
@@ -29,6 +30,7 @@ export default function ChatThreadView({
   mentionOptions,
   onBack,
   onToggleFollow,
+  actionPending = false,
   onAccept,
   onDecline,
   onSend,
@@ -68,6 +70,7 @@ export default function ChatThreadView({
             aria-label={`Unfollow ${person.name}`}
             className="min-h-11 min-w-28"
             onClick={onToggleFollow}
+            disabled={actionPending}
           >
             Following
           </Button>
@@ -77,6 +80,7 @@ export default function ChatThreadView({
             aria-label={`${thread.isRequest ? "Follow back" : "Follow"} ${person.name}`}
             className="min-h-11 min-w-28"
             onClick={onToggleFollow}
+            disabled={actionPending}
           >
             {thread.isRequest ? "Follow back" : "Follow"}
           </Button>
@@ -88,7 +92,7 @@ export default function ChatThreadView({
         <div className="flex flex-col gap-3 p-4 md:p-6">
           <p className="mb-1 text-center text-small text-text-subtle">Today</p>
           {thread.messages.map((message) => (
-            <ChatMessageView key={message.id} message={message} me={me} onRsvp={onRsvp} />
+            <ChatMessageView key={message.id} message={message} me={me} onRsvp={onRsvp} actionPending={actionPending} />
           ))}
         </div>
       </div>
@@ -101,19 +105,21 @@ export default function ChatThreadView({
             messages until you accept.
           </p>
           <div className="mt-1 flex flex-wrap justify-center gap-2">
-            <Button className="min-h-11 min-w-28" onClick={onAccept}>
+            <Button className="min-h-11 min-w-28" onClick={onAccept} disabled={actionPending}>
               Accept
             </Button>
             <Button
               variant="outline"
               className="min-h-11 min-w-28 border-danger text-danger hover:bg-danger/5"
               onClick={onDecline}
+              disabled={actionPending}
             >
               Delete
             </Button>
             <button
               type="button"
               onClick={onDecline}
+              disabled={actionPending}
               className="min-h-11 cursor-pointer px-4 text-small text-text-muted underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-primary"
             >
               Block
@@ -127,6 +133,7 @@ export default function ChatThreadView({
           onSend={onSend}
           onShareTrail={onShareTrail}
           onProposeHike={onProposeHike}
+          actionPending={actionPending}
         />
       )}
     </>

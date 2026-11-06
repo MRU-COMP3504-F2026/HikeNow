@@ -8,6 +8,7 @@ export type HikeProposalCardProps = {
   /** Usuario actual: se añade a la lista de asistentes cuando responde "I'm in". */
   me: ChatPerson;
   onRsvp: (value: Rsvp) => void;
+  disabled?: boolean;
   className?: string;
 };
 
@@ -19,6 +20,7 @@ export default function HikeProposalCard({
   proposal,
   me,
   onRsvp,
+  disabled = false,
   className = "",
 }: HikeProposalCardProps) {
   const going = proposal.rsvp === "yes" ? [...proposal.going, me] : proposal.going;
@@ -63,10 +65,10 @@ export default function HikeProposalCard({
 
         {proposal.rsvp === "none" && (
           <div className="mt-1 flex gap-2">
-            <Button className="min-h-11 flex-1" onClick={() => onRsvp("yes")}>
+            <Button className="min-h-11 flex-1" onClick={() => onRsvp("yes")} disabled={disabled}>
               I&apos;m in
             </Button>
-            <Button variant="outline" className="min-h-11 flex-1" onClick={() => onRsvp("no")}>
+            <Button variant="outline" className="min-h-11 flex-1" onClick={() => onRsvp("no")} disabled={disabled}>
               Can&apos;t make it
             </Button>
           </div>
@@ -77,7 +79,7 @@ export default function HikeProposalCard({
               <CheckIcon size={14} />
               You&apos;re going
             </span>
-            <button type="button" className={changeButton} onClick={() => onRsvp("none")}>
+            <button type="button" className={changeButton} onClick={() => onRsvp("none")} disabled={disabled}>
               Change
             </button>
           </div>
@@ -85,7 +87,7 @@ export default function HikeProposalCard({
         {proposal.rsvp === "no" && (
           <div className="mt-1 flex items-center justify-between gap-2">
             <span className="text-small text-text-muted">You declined this hike</span>
-            <button type="button" className={changeButton} onClick={() => onRsvp("none")}>
+            <button type="button" className={changeButton} onClick={() => onRsvp("none")} disabled={disabled}>
               Change
             </button>
           </div>

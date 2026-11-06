@@ -4,6 +4,14 @@ import { db } from "@/app/db";
 import { member } from "@/app/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/app/lib/session";
+
+async function requireMember(hikerId: string) {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+  if (user.id !== hikerId) throw new Error("Cannot change another user's memberships.");
+}
 
 // 1. SELECT ALL MEMBERSHIPS
 export async function getMemberships() {
@@ -28,6 +36,7 @@ export async function getHikerGroups(hikerId: string) {
 
 // 4. INSERT MEMBER (Join Group)
 export async function joinGroup(hikerId: string, groupId: string) {
+  await requireMember(hikerId);
   const [newMember] = await db
     .insert(member)
     .values({ hikerId, groupId })
@@ -40,6 +49,7 @@ export async function joinGroup(hikerId: string, groupId: string) {
 
 // 5. DELETE MEMBER (Leave Group)
 export async function leaveGroup(hikerId: string, groupId: string) {
+  await requireMember(hikerId);
   await db
     .delete(member)
     .where(

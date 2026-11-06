@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import ChatsView from "../components/chats-view";
 import Footer from "../components/footer";
 import Navbar from "../components/session-navbar";
+import { getCurrentUser } from "../lib/session";
 import {
   INITIAL_THREADS,
   ME,
@@ -14,6 +17,20 @@ export const metadata: Metadata = {
   title: "Chats | Hike Now",
 };
 
+async function ChatsContent() {
+  if (!await getCurrentUser()) redirect("/login");
+
+  return (
+    <ChatsView
+      initialThreads={INITIAL_THREADS}
+      shareableTrails={SHAREABLE_TRAILS}
+      mentionOptions={MENTION_OPTIONS}
+      suggestions={SUGGESTED_HIKERS}
+      me={ME}
+    />
+  );
+}
+
 export default function ChatsPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -24,13 +41,9 @@ export default function ChatsPage() {
           Chats
         </h1>
 
-        <ChatsView
-          initialThreads={INITIAL_THREADS}
-          shareableTrails={SHAREABLE_TRAILS}
-          mentionOptions={MENTION_OPTIONS}
-          suggestions={SUGGESTED_HIKERS}
-          me={ME}
-        />
+        <Suspense fallback={<p role="status" className="text-text-subtle">Loading chats...</p>}>
+          <ChatsContent />
+        </Suspense>
       </main>
 
       <Footer />

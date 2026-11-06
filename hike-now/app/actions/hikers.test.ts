@@ -28,7 +28,7 @@ it("hashes the password before insertion and never accepts a caller-provided ide
   expect(mocks.hashPassword).toHaveBeenCalledWith("password1");
   expect(mocks.values).toHaveBeenCalledWith({ email: "a@b.co", password: "scrypt-hash", description: undefined });
   expect(result).not.toHaveProperty("password");
-  expect(mocks.returning).toHaveBeenCalledWith({ id: hiker.id, email: hiker.email, description: hiker.description });
+  expect(mocks.returning).toHaveBeenCalledWith({ id: hiker.id, email: hiker.email, description: hiker.description, joinedAt: hiker.joinedAt });
 });
 
 it("validates creation and explicitly rejects duplicate emails", async () => {
@@ -40,11 +40,28 @@ it("validates creation and explicitly rejects duplicate emails", async () => {
 });
 
 it("projects only public fields for both hiker reads", async () => {
-  const rows = [{ id: "hiker-id", email: "a@b.co", description: null }];
+  const rows = [{ id: "hiker-id", email: "a@b.co", description: null, joinedAt: null }];
   mocks.select.mockReturnValue({
     from: () => Object.assign(Promise.resolve(rows), { where: vi.fn().mockResolvedValue(rows) }),
   });
   expect(await getHikers()).toEqual(rows);
   expect(await getHikerById("hiker-id")).toEqual(rows[0]);
-  expect(mocks.select).toHaveBeenCalledWith({ id: hiker.id, email: hiker.email, description: hiker.description });
+  expect(mocks.select).toHaveBeenCalledWith({ id: hiker.id, email: hiker.email, description: hiker.description, joinedAt: hiker.joinedAt });
+});
+
+it("returns ISO join dates that survive cache serialization, including unknown legacy dates", async () => {
+  const rows = [
+    { id: "dated-hiker", email: "a@b.co", description: null, joinedAt: new Date("2026-11-05T21:00:00Z") },
+    { id: "legacy-hiker", email: "old@b.co", description: null, joinedAt: null },
+  ];
+  mocks.select.mockReturnValue({
+    from: () => Object.assign(Promise.resolve(rows), { where: vi.fn().mockResolvedValue([rows[0]]) }),
+  });
+  const all = await getHikers();
+  expect(all[0].joinedAt).toBe("2026-11-05T21:00:00.000Z");
+  expect(all[1].joinedAt).toBeNull();
+  expect(JSON.parse(JSON.stringify(all))).toEqual(all);
+  const single = await getHikerById("dated-hiker");
+  expect(single).toEqual(all[0]);
+  expect(JSON.parse(JSON.stringify(single))).toEqual(single);
 });

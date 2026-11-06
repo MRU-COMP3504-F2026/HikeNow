@@ -2,10 +2,14 @@ import Footer from "../../components/footer";
 import Navbar from "../../components/session-navbar";
 import ReviewForm from "../../components/review-form";
 import { getHikes } from "../../actions/hikes";
+import { Suspense } from "react";
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "../../lib/session";
 
 export const instant = false;
 
-export default async function NewReviewPage() {
+async function NewReviewForm() {
+  if (!await getCurrentUser()) redirect("/login");
   // Fetch hiking trails dynamically from PostgreSQL
   const hikes = (await getHikes()) ?? [];
 
@@ -18,6 +22,14 @@ export default async function NewReviewPage() {
 
   const initialTrailId = trails[0]?.id ?? "";
 
+  return trails.length > 0 ? (
+    <ReviewForm trails={trails} initialTrailId={initialTrailId} />
+  ) : (
+    <p className="text-text-subtle">No hiking trails found in the database.</p>
+  );
+}
+
+export default function NewReviewPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Navbar />
@@ -26,13 +38,9 @@ export default async function NewReviewPage() {
         <h1 className="mb-8 text-title font-semibold text-primary">
           Leave a review
         </h1>
-        {trails.length > 0 ? (
-          <ReviewForm trails={trails} initialTrailId={initialTrailId} />
-        ) : (
-          <p className="text-text-subtle">
-            No hiking trails found in the database.
-          </p>
-        )}
+        <Suspense fallback={<p className="text-text-subtle">Loading review form...</p>}>
+          <NewReviewForm />
+        </Suspense>
       </main>
 
       <Footer />

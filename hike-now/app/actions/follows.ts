@@ -4,6 +4,14 @@ import { db } from "@/app/db";
 import { follow } from "@/app/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/app/lib/session";
+
+async function requireFollower(followerId: string) {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+  if (user.id !== followerId) throw new Error("Cannot change another user's follows.");
+}
 
 // 1. SELECT ALL FOLLOW RELATIONS
 export async function getFollows() {
@@ -28,6 +36,7 @@ export async function getFollowing(followerId: string) {
 
 // 4. INSERT FOLLOW (Follow a user)
 export async function followUser(followerId: string, followeeId: string) {
+  await requireFollower(followerId);
   const [newFollow] = await db
     .insert(follow)
     .values({ followerId, followeeId })
@@ -40,6 +49,7 @@ export async function followUser(followerId: string, followeeId: string) {
 
 // 5. DELETE FOLLOW (Unfollow a user)
 export async function unfollowUser(followerId: string, followeeId: string) {
+  await requireFollower(followerId);
   await db
     .delete(follow)
     .where(

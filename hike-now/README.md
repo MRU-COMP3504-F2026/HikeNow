@@ -7,7 +7,8 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 The `/login` screen reuses the app's Login/Sign up tabs and shared styling.
 It calls the server actions in `app/actions/auth.ts`; successful login or signup
 sets an HTTP-only session cookie and navigates to the trails page. The navbar
-shows the current account and provides Log out on desktop and mobile.
+shows the current account, links to its profile dashboard, and provides Log out
+on desktop and mobile.
 
 Set `DATABASE_URL` in `.env` to a **server-only PostgreSQL connection** with
 permission to access the existing tables and bypass their RLS policies (the
@@ -27,7 +28,7 @@ It is transactional and safe to rerun. Existing email duplicates differing
 only in case must be resolved first; unsupported legacy hashes abort the setup
 rather than being silently overwritten.
 
-Public hiker actions return only id, email, and description. The setup also
+Public hiker actions return only id, email, description, and join date. The setup also
 removes Supabase anon/authenticated access to the password column and sessions.
 Sessions expire after seven days, store only SHA-256 token hashes in PostgreSQL,
 and are revoked on logout or replaced on login. Production requires HTTPS
@@ -38,9 +39,45 @@ Rerun `db:auth` periodically to remove expired sessions and rate-limit records.
 
 This is application authentication, **not** a Supabase Auth JWT: it does not
 change `auth.uid()` or authenticate the optional Supabase client. Chats and
-review/follow controls that currently use mock behavior are otherwise unchanged.
+follow controls that currently use mock behavior are otherwise unchanged.
+Signed-out visitors are redirected to `/login` when opening chats, the
+following feed, or a review form, or when attempting to follow someone.
+Chat actions and follow controls recheck the session when used, including
+after a session expires; review and account mutations also redirect if the
+session has ended.
+Public trails, reviews, and other hikers' profiles remain accessible.
 Before public deployment, configure ingress rate limiting for authentication
 requests and add account recovery/email verification as needed.
+
+### Profile dashboard and reviews
+
+After the authentication setup, run the additive profile migration:
+
+```bash
+npm run db:profiles
+```
+
+This adds join dates for new accounts and creation dates for new reviews.
+Existing dates remain unknown: legacy accounts display "Not recorded", and
+legacy reviews are listed after dated reviews. The migration is transactional
+and safe to rerun; deploy it before starting the updated application.
+Cached profile and review reads return dates as ISO strings so their types
+remain consistent across cache hits. Session reads wait for a real request
+before checking expiry; they are not evaluated during prerendering.
+
+Click the avatar or email in the navbar to open `/profile`, which redirects to
+your dashboard. It shows the join date and complete review history, newest
+first, with links to the reviewed trails. Distance tracking is deferred.
+Review forms require login; the server derives ownership from the session,
+never from a client-provided hiker ID. Review updates and deletion also require
+ownership. Failed saves display an error instead of a success confirmation.
+Optional photo uploads still require the configured Supabase storage bucket.
+
+Only your own dashboard shows account deletion. You must confirm with your
+current password. Database foreign keys cascade deletion to reviews,
+memberships, follows, and every session; the browser cookie is cleared and you
+are redirected to login. Uploaded storage objects are not deleted by database
+cascades and require a separate storage retention/cleanup policy.
 
 First, run the development server:
 

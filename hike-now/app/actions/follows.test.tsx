@@ -9,17 +9,21 @@ vi.mock("drizzle-orm", async (importOriginal) => ({
   and: (...conditions: unknown[]) => ({ op: "and", conditions }),
 }));
 
-const { db, revalidatePath } = vi.hoisted(() => ({
+const { db, revalidatePath, getCurrentUser, redirect } = vi.hoisted(() => ({
   db: {
     select: vi.fn(),
     insert: vi.fn(),
     delete: vi.fn(),
   },
   revalidatePath: vi.fn(),
+  getCurrentUser: vi.fn(),
+  redirect: vi.fn(),
 }));
 
 vi.mock("@/app/db", () => ({ db }));
 vi.mock("next/cache", () => ({ revalidatePath }));
+vi.mock("@/app/lib/session", () => ({ getCurrentUser }));
+vi.mock("next/navigation", () => ({ redirect }));
 
 import { follow } from "@/app/db/schema";
 import {
@@ -43,7 +47,8 @@ function mockSelect(rows: unknown[]) {
 }
 
 beforeEach(() => {
-  vi.clearAllMocks();
+  vi.resetAllMocks();
+  getCurrentUser.mockResolvedValue({ id: A, email: "hiker@example.com" });
 });
 
 // --- Tests -----------------------------------------------------------------
@@ -130,6 +135,16 @@ describe("followUser", () => {
     await expect(followUser(A, B)).rejects.toThrow("duplicate key");
     expect(revalidatePath).not.toHaveBeenCalled();
   });
+
+  it("redirects signed-out users and rejects attempts to act for another user", async () => {
+    getCurrentUser.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: B });
+    redirect.mockImplementation(() => { throw new Error("NEXT_REDIRECT"); });
+    await expect(followUser(A, B)).rejects.toThrow("NEXT_REDIRECT");
+    expect(redirect).toHaveBeenCalledWith("/login");
+    await expect(followUser(A, B)).rejects.toThrow("another user's follows");
+    expect(db.insert).not.toHaveBeenCalled();
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
 });
 
 describe("unfollowUser", () => {
@@ -169,6 +184,16 @@ describe("unfollowUser", () => {
     });
 
     await expect(unfollowUser(A, B)).rejects.toThrow("connection lost");
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it("redirects signed-out users and rejects attempts to act for another user", async () => {
+    getCurrentUser.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: B });
+    redirect.mockImplementation(() => { throw new Error("NEXT_REDIRECT"); });
+    await expect(unfollowUser(A, B)).rejects.toThrow("NEXT_REDIRECT");
+    expect(redirect).toHaveBeenCalledWith("/login");
+    await expect(unfollowUser(A, B)).rejects.toThrow("another user's follows");
+    expect(db.delete).not.toHaveBeenCalled();
     expect(revalidatePath).not.toHaveBeenCalled();
   });
 });

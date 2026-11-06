@@ -7,7 +7,7 @@ import { hiker } from "@/app/db/schema";
 import { createHiker } from "./hikers";
 import { validateCredentials, type AuthResult, type Credentials } from "@/app/lib/auth-validation";
 import { verifyPassword } from "@/app/lib/password";
-import { createSession, deleteSession } from "@/app/lib/session";
+import { createSession, deleteSession, getCurrentUser } from "@/app/lib/session";
 import { AuthRateLimitError, checkAuthRateLimit } from "@/app/lib/auth-rate-limit";
 
 export async function login(input: Credentials): Promise<AuthResult> {
@@ -56,4 +56,8 @@ export async function signup(input: Credentials): Promise<AuthResult> {
 export async function logout() {
   await deleteSession();
   redirect("/login");
+}
+
+export async function hasActiveSession() {
+  return Boolean(await getCurrentUser());
 }

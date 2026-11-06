@@ -20,6 +20,7 @@ export const hiker = pgTable(
     email: varchar("email", { length: 255 }).notNull().unique(),
     password: varchar("password", { length: 255 }).notNull(),
     description: text("description"),
+    joinedAt: timestamp("joined_at", { withTimezone: true }).defaultNow(),
   },
   (table) => [
     uniqueIndex("hiker_email_normalized_unique").on(sql`lower(${table.email})`),
@@ -162,6 +163,7 @@ export const review = pgTable(
     condition: varchar("condition", { length: 255 }),
     comments: text("comments"),
     title: varchar("title", { length: 255 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
   (table) => [
     pgPolicy("Reviews are viewable by everyone", {

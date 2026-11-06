@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import Navbar from "./navbar";
 
@@ -47,9 +47,10 @@ describe("Navbar", () => {
   });
 
   it("shows the signed-in user instead of the login action", () => {
-    render(<Navbar user={{ email: "hiker@example.com" }} />);
+    render(<Navbar user={{ id: "u1", email: "hiker@example.com" }} />);
 
     expect(screen.getAllByText("hiker@example.com")).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "Log out" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Login" })).not.toBeInTheDocument();
   });
 
@@ -57,6 +58,18 @@ describe("Navbar", () => {
     render(<Navbar user={{ id: "u1", email: "hiker@example.com" }} />);
 
     expect(screen.getByRole("link", { name: /My profile/ })).toHaveAttribute("href", "/profile/u1");
+  });
+
+  it("links to the signed-in profile from the mobile menu and closes it", () => {
+    render(<Navbar user={{ id: "u1", email: "hiker@example.com" }} />);
+    fireEvent.click(screen.getByRole("button", { name: "Open menu" }));
+
+    const mobileMenu = screen.getByRole("navigation", { name: "Mobile" });
+    const profileLink = within(mobileMenu).getByRole("link", { name: "My profile (hiker@example.com)" });
+    expect(profileLink).toHaveAttribute("href", "/profile/u1");
+    profileLink.addEventListener("click", (event) => event.preventDefault());
+    fireEvent.click(profileLink);
+    expect(screen.queryByRole("navigation", { name: "Mobile" })).not.toBeInTheDocument();
   });
 
   it("submits the search box to /search with the query", () => {

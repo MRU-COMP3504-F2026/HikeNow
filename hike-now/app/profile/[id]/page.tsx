@@ -5,14 +5,15 @@ import Footer from "../../components/footer";
 import Navbar from "../../components/session-navbar";
 import ReviewCard, { type ReviewCondition } from "../../components/review-card";
 import UserProfile from "../../components/user-profile";
+import DeleteAccount from "../../components/delete-account";
+import { getCurrentUser } from "../../lib/session";
 
 // Import Server Actions
-import { getHikers } from "../../actions/hikers";
+import { getHikers, getHikerById } from "../../actions/hikers";
 import { getReviews } from "../../actions/reviews";
 import { getHikes } from "../../actions/hikes";
 import { getFollowers, getFollowing } from "../../actions/follows";
 import { hikerName } from "../../lib/hiker-search";
-import { getCurrentUser } from "@/app/lib/session";
 
 interface PageProps {
   params: Promise<{ id: string }> | { id: string };
@@ -65,15 +66,15 @@ async function ProfileContent({ params }: PageProps) {
   const { id } = await params;
 
   // Fetch all required data concurrently from PostgreSQL
-  const [hikers, reviewsData, hikesData, currentUser] = await Promise.all([
-    getHikers(),
+  const [hiker, reviewsData, hikesData, currentUser] = await Promise.all([
+    getHikerById(id),
     getReviews(),
     getHikes(),
     getCurrentUser(),
   ]);
 
-  const hiker = hikers.find((h) => h.id === id);
   if (!hiker) notFound();
+  const isOwnProfile = currentUser?.id === hiker.id;
 
   const [followers, following] = await Promise.all([
     getFollowers(hiker.id),
@@ -81,11 +82,11 @@ async function ProfileContent({ params }: PageProps) {
   ]);
 
   const displayName = hikerName(hiker.email);
-  const isOwnProfile = currentUser?.id === hiker.id;
 
   // Filter reviews written by this hiker
   const reviews = reviewsData
     .filter((r) => r.hikerId === hiker.id)
+    .sort((a, b) => (b.createdAt ? Date.parse(b.createdAt) : 0) - (a.createdAt ? Date.parse(a.createdAt) : 0))
     .map((r) => {
       const hike = hikesData.find((h) => h.id === r.hikeId);
       return {
@@ -99,6 +100,7 @@ async function ProfileContent({ params }: PageProps) {
         trailName: hike?.name ?? "Unknown trail",
         trailHref: hike ? `/reviews/${hike.id}` : undefined,
         hikeId: r.hikeId,
+        createdAt: r.createdAt,
       };
     });
 
@@ -106,11 +108,13 @@ async function ProfileContent({ params }: PageProps) {
 
   return (
     <>
+        {isOwnProfile && <p className="mb-6 text-heading font-semibold text-primary">Your dashboard</p>}
         <UserProfile
           name={displayName}
           email={hiker.email}
           description={hiker.description ?? undefined}
           stats={[
+            { label: "Joined", value: hiker.joinedAt ? new Date(hiker.joinedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }) : "Not recorded" },
             { label: "Reviews", value: reviews.length },
             { label: "Trails reviewed", value: trailsReviewed },
             { label: "Followers", value: followers.length },
@@ -121,23 +125,25 @@ async function ProfileContent({ params }: PageProps) {
         />
 
         <h2 className="mb-4 text-heading font-semibold text-ink">
-          Reviews ({reviews.length})
+          Review history ({reviews.length})
         </h2>
 
         <section className="flex flex-col gap-4" aria-label="Reviews by this hiker">
           {reviews.length > 0 ? (
             reviews.map((r) => (
-              <ReviewCard
-                key={r.id}
-                rating={r.rating}
-                condition={r.condition}
-                tags={r.tags}
-                title={r.title}
-                comments={r.comments}
-                trailName={r.trailName}
-                trailHref={r.trailHref}
-                photos={r.photo ? [r.photo] : []}
-              />
+              <div key={r.id}>
+                {r.createdAt && <p className="mb-2 text-small text-text-subtle">Reviewed on <time dateTime={r.createdAt}>{new Date(r.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" })}</time></p>}
+                <ReviewCard
+                  rating={r.rating}
+                  condition={r.condition}
+                  tags={r.tags}
+                  title={r.title}
+                  comments={r.comments}
+                  trailName={r.trailName}
+                  trailHref={r.trailHref}
+                  photos={r.photo ? [r.photo] : []}
+                />
+              </div>
             ))
           ) : (
             <p className="text-text-subtle">
@@ -145,6 +151,7 @@ async function ProfileContent({ params }: PageProps) {
             </p>
           )}
         </section>
+        {isOwnProfile && <DeleteAccount />}
     </>
   );
 }

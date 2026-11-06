@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useChats } from "../hooks/use-chats";
+import { useAuthenticatedAction } from "../hooks/use-authenticated-action";
 import type { ChatPerson, ChatThread, MentionOption, TrailShare } from "../chats/types";
 import ChatEmptyState from "./chat-empty-state";
 import ChatList from "./chat-list";
@@ -25,6 +26,7 @@ export default function ChatsView({
   me,
 }: ChatsViewProps) {
   const chats = useChats({ initialThreads, shareableTrails });
+  const actionAuth = useAuthenticatedAction();
   // En móvil se ve la lista o la conversación, no las dos a la vez.
   const [threadOpenOnMobile, setThreadOpenOnMobile] = useState(false);
 
@@ -67,16 +69,19 @@ export default function ChatsView({
             me={me}
             mentionOptions={mentionOptions}
             onBack={() => setThreadOpenOnMobile(false)}
-            onToggleFollow={() => chats.toggleFollow(active.id)}
-            onAccept={() => chats.accept(active.id)}
+            onToggleFollow={() => { void actionAuth.run(() => chats.toggleFollow(active.id)); }}
+            actionPending={actionAuth.pending}
+            onAccept={() => { void actionAuth.run(() => chats.accept(active.id)); }}
             onDecline={() => {
-              chats.decline(active.id);
-              setThreadOpenOnMobile(false);
+              void actionAuth.run(() => {
+                chats.decline(active.id);
+                setThreadOpenOnMobile(false);
+              });
             }}
-            onSend={chats.sendText}
-            onShareTrail={chats.shareTrail}
-            onProposeHike={chats.proposeHike}
-            onRsvp={chats.rsvp}
+            onSend={(text) => actionAuth.run(() => chats.sendText(text))}
+            onShareTrail={() => { void actionAuth.run(chats.shareTrail); }}
+            onProposeHike={() => { void actionAuth.run(chats.proposeHike); }}
+            onRsvp={(messageId, value) => { void actionAuth.run(() => chats.rsvp(messageId, value)); }}
           />
         ) : noChats ? (
           <ChatEmptyState suggestions={suggestions} />
@@ -86,6 +91,7 @@ export default function ChatsView({
             <p className="text-nav text-text-subtle">Pick a conversation from the list.</p>
           </div>
         )}
+        {actionAuth.error && <p role="alert" className="p-3 text-small text-danger">{actionAuth.error}</p>}
       </div>
     </section>
   );

@@ -2,6 +2,7 @@ import "server-only";
 import { createHash, randomBytes } from "node:crypto";
 import { cache } from "react";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import { and, eq, gt } from "drizzle-orm";
 import { db } from "@/app/db";
 import { hiker, hikerSession } from "@/app/db/schema";
@@ -35,6 +36,7 @@ export async function createSession(hikerId: string) {
 }
 
 export const getCurrentUser = cache(async () => {
+  await connection();
   const token = (await cookies()).get(COOKIE_NAME)?.value;
   if (!token || !/^[a-f0-9]{64}$/.test(token)) return null;
   const [user] = await db
