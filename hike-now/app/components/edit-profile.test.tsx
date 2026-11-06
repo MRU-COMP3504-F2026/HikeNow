@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, expect, it, vi } from "vitest";
 import EditProfile from "./edit-profile";
+import type { ProfileDetails } from "@/app/lib/profile";
 
 const { updateProfile, refresh } = vi.hoisted(() => ({ updateProfile: vi.fn(), refresh: vi.fn() }));
 vi.mock("@/app/actions/profile", () => ({ updateProfile }));
@@ -8,7 +9,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh }) }));
 
 beforeEach(() => vi.resetAllMocks());
 
-function renderEditor(profile = { displayName: "Alex Summit", bio: "I like ridges." }) {
+function renderEditor(profile: ProfileDetails = { displayName: "Alex Summit", bio: "I like ridges." }) {
   render(<EditProfile defaultName="Alex" initialProfile={profile} />);
   fireEvent.click(screen.getByRole("button", { name: "Edit profile" }));
 }

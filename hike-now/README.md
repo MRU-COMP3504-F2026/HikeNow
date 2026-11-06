@@ -28,7 +28,7 @@ It is transactional and safe to rerun. Existing email duplicates differing
 only in case must be resolved first; unsupported legacy hashes abort the setup
 rather than being silently overwritten.
 
-Public hiker actions return only id, email, description, and join date. The setup also
+Public hiker actions return only id, email, chosen name, bio (description), and join date. The setup also
 removes Supabase anon/authenticated access to the password column and sessions.
 Sessions expire after seven days, store only SHA-256 token hashes in PostgreSQL,
 and are revoked on logout or replaced on login. Production requires HTTPS
@@ -56,7 +56,8 @@ After the authentication setup, run the additive profile migration:
 npm run db:profiles
 ```
 
-This adds join dates for new accounts and creation dates for new reviews.
+This adds join dates for new accounts, creation dates for new reviews, and an
+optional `display_name` column for chosen names.
 Existing dates remain unknown: legacy accounts display "Not recorded", and
 legacy reviews are listed after dated reviews. The migration is transactional
 and safe to rerun; deploy it before starting the updated application.
@@ -67,6 +68,11 @@ before checking expiry; they are not evaluated during prerendering.
 Click the avatar or email in the navbar to open `/profile`, which redirects to
 your dashboard. It shows the join date and complete review history, newest
 first, with links to the reviewed trails. Distance tracking is deferred.
+Select **Edit profile** on your dashboard to set a name (up to 50 characters)
+and a bio (up to 500 characters, line breaks allowed). The server saves them
+only for the signed-in hiker. A chosen name is shown on profiles, reviews,
+search, and chats; leaving it blank restores the name derived from your email.
+The bio is stored in the existing `hiker.description` column.
 Review forms require login; the server derives ownership from the session,
 never from a client-provided hiker ID. Review updates and deletion also require
 ownership. Failed saves display an error instead of a success confirmation.
