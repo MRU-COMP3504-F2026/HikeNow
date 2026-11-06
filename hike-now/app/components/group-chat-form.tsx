@@ -29,10 +29,7 @@ export default function GroupChatForm({ contacts, pending, onCreate, onCancel }:
       return;
     }
     setError(null);
-    if (await onCreate(name.trim(), selected)) {
-      setName("");
-      setSelected([]);
-    }
+    await onCreate(name.trim(), selected);
   }
 
   return (

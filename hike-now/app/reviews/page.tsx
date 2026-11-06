@@ -178,7 +178,7 @@ export default async function ReviewsPage() {
         tags: r.tags ? r.tags.split(", ").map((t) => t.trim()) : [],
         title: r.title ?? "Untitled Review",
         comment: r.comments ?? "",
-        author: hiker ? hiker.email.split("@")[0] : "Anonymous Hiker",
+        author: hiker ? hiker.displayName?.trim() || hiker.email.split("@")[0] : "Anonymous Hiker",
         authorHref: hiker ? profileHref(hiker.id) : undefined,
         trailName: hike ? hike.name : "Unknown Trail",
         photoUrl: r.photo ?? undefined,

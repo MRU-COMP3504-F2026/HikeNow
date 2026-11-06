@@ -54,12 +54,12 @@ export type ChatMessage =
 type ChatThreadBase = {
   id: string;
   blocked?: boolean;
-  /** true si es una solicitud de mensaje (no os seguís). */
+  /** True when the viewer has not accepted the conversation or followed its inviter. */
   isRequest: boolean;
   /** Hora del último mensaje, ya formateada ("10m", "Yesterday"…). */
   time: string;
   unread: boolean;
-  /** Línea de contexto bajo el nombre ("You hiked Cory Pass together · Oct 12"). */
+  /** Context shown below the conversation name. */
   context: string;
   messages: ChatMessage[];
 };

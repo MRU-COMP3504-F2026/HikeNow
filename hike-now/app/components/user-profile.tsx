@@ -57,7 +57,7 @@ export default function UserProfile({
         </div>
 
         {description && (
-          <p className="max-w-2xl text-small leading-5 text-text">
+          <p className="max-w-2xl whitespace-pre-line break-words text-small leading-5 text-text">
             {description}
           </p>
         )}

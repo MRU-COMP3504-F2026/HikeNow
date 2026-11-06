@@ -84,7 +84,7 @@ export async function getChatThreads(): Promise<ChatThread[]> {
     db.select().from(follow).where(eq(follow.followerId, user.id)),
     db.select({
       membership: conversationMember,
-      person: { id: hiker.id, email: hiker.email },
+      person: { id: hiker.id, email: hiker.email, displayName: hiker.displayName },
     }).from(conversationMember)
       .innerJoin(hiker, eq(hiker.id, conversationMember.hikerId))
       .where(inArray(conversationMember.conversationId, rows.map((row) => row.room.id))),
@@ -99,7 +99,7 @@ export async function getChatThreads(): Promise<ChatThread[]> {
     const latest = roomMessages.at(-1);
     const common = {
       id: room.id,
-      blocked: room.kind === "direct" && roster.some((entry) => entry.membership.blocked),
+      blocked: membership.blocked || (room.kind === "direct" && roster.some((entry) => entry.membership.blocked)),
       isRequest: !membership.accepted && (!requestSenderId || !followed.has(requestSenderId)),
       time: latest ? latest.createdAt.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "",
       unread: (room.kind === "group" && room.createdBy !== user.id && !membership.readAt) ||
@@ -143,7 +143,7 @@ export async function getChatData() {
   const user = await requireUser();
   const [threads, contacts, trails] = await Promise.all([
     getChatThreads(),
-    db.select({ id: hiker.id, email: hiker.email }).from(follow)
+    db.select({ id: hiker.id, email: hiker.email, displayName: hiker.displayName }).from(follow)
       .innerJoin(hiker, eq(hiker.id, follow.followeeId)).where(eq(follow.followerId, user.id)),
     db.select().from(hike),
   ]);
@@ -191,7 +191,7 @@ export async function createGroupConversation(name: string, inviteeIds: string[]
   }
 
   return await db.transaction(async (tx) => {
-    const selected = await tx.select({ id: hiker.id, email: hiker.email }).from(follow)
+    const selected = await tx.select({ id: hiker.id, email: hiker.email, displayName: hiker.displayName }).from(follow)
       .innerJoin(hiker, eq(hiker.id, follow.followeeId))
       .where(and(eq(follow.followerId, user.id), inArray(follow.followeeId, ids)))
       .orderBy(asc(follow.followeeId)).for("share");

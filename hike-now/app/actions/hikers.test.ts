@@ -28,7 +28,7 @@ it("hashes the password before insertion and never accepts a caller-provided ide
   expect(mocks.hashPassword).toHaveBeenCalledWith("password1");
   expect(mocks.values).toHaveBeenCalledWith({ email: "a@b.co", password: "scrypt-hash", description: undefined });
   expect(result).not.toHaveProperty("password");
-  expect(mocks.returning).toHaveBeenCalledWith({ id: hiker.id, email: hiker.email, description: hiker.description, joinedAt: hiker.joinedAt });
+  expect(mocks.returning).toHaveBeenCalledWith({ id: hiker.id, email: hiker.email, displayName: hiker.displayName, description: hiker.description, joinedAt: hiker.joinedAt });
 });
 
 it("validates creation and explicitly rejects duplicate emails", async () => {
@@ -46,7 +46,7 @@ it("projects only public fields for both hiker reads", async () => {
   });
   expect(await getHikers()).toEqual(rows);
   expect(await getHikerById("hiker-id")).toEqual(rows[0]);
-  expect(mocks.select).toHaveBeenCalledWith({ id: hiker.id, email: hiker.email, description: hiker.description, joinedAt: hiker.joinedAt });
+  expect(mocks.select).toHaveBeenCalledWith({ id: hiker.id, email: hiker.email, displayName: hiker.displayName, description: hiker.description, joinedAt: hiker.joinedAt });
 });
 
 it("returns ISO join dates that survive cache serialization, including unknown legacy dates", async () => {

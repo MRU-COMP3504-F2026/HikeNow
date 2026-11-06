@@ -1,8 +1,8 @@
 import type { ChatPerson } from "./types";
 import { hikerName } from "../lib/hiker-search";
 
-export function chatPerson(person: { id: string; email: string }): ChatPerson {
-  const name = hikerName(person.email);
+export function chatPerson(person: { id: string; email: string; displayName?: string | null }): ChatPerson {
+  const name = hikerName(person.email, person.displayName);
   return {
     id: person.id,
     name,

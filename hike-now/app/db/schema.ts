@@ -24,6 +24,7 @@ export const hiker = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     email: varchar("email", { length: 255 }).notNull().unique(),
     password: varchar("password", { length: 255 }).notNull(),
+    displayName: varchar("display_name", { length: 50 }),
     description: text("description"),
     joinedAt: timestamp("joined_at", { withTimezone: true }).defaultNow(),
   },

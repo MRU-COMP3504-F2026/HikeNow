@@ -75,7 +75,7 @@ it("returns only public identity, or null for expired/revoked sessions", async (
   expect(await getCurrentUser()).toEqual({ id: "hiker-id", email: "a@b.co" });
   expect(mocks.connection).toHaveBeenCalled();
   expect(mocks.connection.mock.invocationCallOrder[0]).toBeLessThan(mocks.get.mock.invocationCallOrder[0]);
-  expect(mocks.select).toHaveBeenCalledWith({ id: hiker.id, email: hiker.email });
+  expect(mocks.select).toHaveBeenCalledWith({ id: hiker.id, email: hiker.email, displayName: hiker.displayName });
   mocks.limit.mockResolvedValue([]);
   expect(await getCurrentUser()).toBeNull();
 });

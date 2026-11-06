@@ -6,6 +6,7 @@ import Navbar from "../../components/session-navbar";
 import ReviewCard, { type ReviewCondition } from "../../components/review-card";
 import UserProfile from "../../components/user-profile";
 import DeleteAccount from "../../components/delete-account";
+import EditProfile from "../../components/edit-profile";
 import { getCurrentUser } from "../../lib/session";
 
 // Import Server Actions
@@ -81,7 +82,7 @@ async function ProfileContent({ params }: PageProps) {
     getFollowing(hiker.id),
   ]);
 
-  const displayName = hikerName(hiker.email);
+  const displayName = hikerName(hiker.email, hiker.displayName);
 
   // Filter reviews written by this hiker
   const reviews = reviewsData
@@ -131,8 +132,15 @@ async function ProfileContent({ params }: PageProps) {
               />
             </div>
           )}
-          className="mb-10"
+          className={isOwnProfile ? "mb-6" : "mb-10"}
         />
+        {isOwnProfile && (
+          <EditProfile
+            defaultName={hikerName(hiker.email)}
+            initialProfile={{ displayName: hiker.displayName, bio: hiker.description }}
+            className="mb-10"
+          />
+        )}
 
         <h2 className="mb-4 text-heading font-semibold text-ink">
           Review history ({reviews.length})

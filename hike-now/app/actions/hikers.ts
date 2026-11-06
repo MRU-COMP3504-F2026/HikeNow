@@ -8,7 +8,7 @@ import { validateCredentials } from "@/app/lib/auth-validation";
 import { hashPassword } from "@/app/lib/password";
 import { checkAuthRateLimit } from "@/app/lib/auth-rate-limit";
 
-const publicHiker = { id: hiker.id, email: hiker.email, description: hiker.description, joinedAt: hiker.joinedAt };
+const publicHiker = { id: hiker.id, email: hiker.email, displayName: hiker.displayName, description: hiker.description, joinedAt: hiker.joinedAt };
 
 // 1. SELECT ALL HIKERS (Cached for prerendering)
 export const getHikers = unstable_cache(
@@ -16,7 +16,7 @@ export const getHikers = unstable_cache(
     const rows = await db.select(publicHiker).from(hiker);
     return rows.map((row) => ({ ...row, joinedAt: row.joinedAt?.toISOString() ?? null }));
   },
-  ["all-hikers-public-v3"],
+  ["all-hikers-public-v4"],
   { tags: ["hikers"] }
 );
 
@@ -27,7 +27,7 @@ export async function getHikerById(id: string) {
       const [data] = await db.select(publicHiker).from(hiker).where(eq(hiker.id, id));
       return data ? { ...data, joinedAt: data.joinedAt?.toISOString() ?? null } : null;
     },
-    [`hiker-public-v3-${id}`],
+    [`hiker-public-v4-${id}`],
     { tags: [`hiker-${id}`] }
   )();
 }

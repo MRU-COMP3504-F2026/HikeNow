@@ -40,7 +40,7 @@ export const getCurrentUser = cache(async () => {
   const token = (await cookies()).get(COOKIE_NAME)?.value;
   if (!token || !/^[a-f0-9]{64}$/.test(token)) return null;
   const [user] = await db
-    .select({ id: hiker.id, email: hiker.email })
+    .select({ id: hiker.id, email: hiker.email, displayName: hiker.displayName })
     .from(hikerSession)
     .innerJoin(hiker, eq(hikerSession.hikerId, hiker.id))
     .where(and(eq(hikerSession.tokenHash, tokenHash(token)), gt(hikerSession.expiresAt, new Date())))
