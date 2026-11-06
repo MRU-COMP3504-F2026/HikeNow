@@ -35,27 +35,49 @@ export type HikeProposal = {
   rsvp: Rsvp;
 };
 
-type MessageBase = { id: string; from: "me" | "them" };
+type MessageBase = { id: string; from: "me" | "them"; sender?: ChatPerson };
+
+export type ChatContent =
+  | { kind: "text"; text: string }
+  | { kind: "trail"; trail: TrailShare }
+  | { kind: "proposal"; proposal: HikeProposal };
+
+export type SendChatInput =
+  | { kind: "text"; text: string }
+  | { kind: "trail" | "proposal"; trailId: string };
 
 export type ChatMessage =
   | (MessageBase & { kind: "text"; text: string })
   | (MessageBase & { kind: "trail"; trail: TrailShare })
   | (MessageBase & { kind: "proposal"; proposal: HikeProposal });
 
-export type ChatThread = {
+type ChatThreadBase = {
   id: string;
-  person: ChatPerson;
-  /** true si el usuario actual ya sigue a esta persona. */
-  following: boolean;
-  /** true si es una solicitud de mensaje (no os seguís). */
+  blocked?: boolean;
+  /** True when the viewer has not accepted the conversation or followed its inviter. */
   isRequest: boolean;
   /** Hora del último mensaje, ya formateada ("10m", "Yesterday"…). */
   time: string;
   unread: boolean;
-  /** Línea de contexto bajo el nombre ("You hiked Cory Pass together · Oct 12"). */
+  /** Context shown below the conversation name. */
   context: string;
   messages: ChatMessage[];
 };
+
+export type DirectChatThread = ChatThreadBase & {
+  kind: "direct";
+  person: ChatPerson;
+  following: boolean;
+};
+
+export type GroupChatThread = ChatThreadBase & {
+  kind: "group";
+  name: string;
+  creator: ChatPerson | null;
+  members: ChatPerson[];
+};
+
+export type ChatThread = DirectChatThread | GroupChatThread;
 
 /** Persona con la que el usuario hizo una ruta, para poder mencionarla. */
 export type MentionOption = {

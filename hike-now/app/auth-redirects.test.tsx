@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(), redirect: vi.fn(), getHikes: vi.fn(),
   getHikers: vi.fn(), getReviews: vi.fn(), getFollowing: vi.fn(),
+  getChatData: vi.fn(),
 }));
 vi.mock("@/app/lib/session", () => ({ getCurrentUser: mocks.getCurrentUser }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
@@ -12,6 +13,7 @@ vi.mock("./actions/hikes", () => ({ getHikes: mocks.getHikes }));
 vi.mock("./actions/hikers", () => ({ getHikers: mocks.getHikers }));
 vi.mock("./actions/reviews", () => ({ getReviews: mocks.getReviews }));
 vi.mock("./actions/follows", () => ({ getFollowing: mocks.getFollowing }));
+vi.mock("./actions/chats", () => ({ getChatData: mocks.getChatData }));
 vi.mock("./components/session-navbar", () => ({ default: () => null }));
 vi.mock("./components/footer", () => ({ default: () => null }));
 vi.mock("./components/chats-view", () => ({ default: () => <p>Chats ready</p> }));
@@ -30,7 +32,7 @@ async function renderPage(element: React.ReactElement) {
 }
 
 const routes = [
-  { name: "chats", page: () => <ChatsPage />, content: "Chats ready" },
+  { name: "chats", page: () => <ChatsPage searchParams={Promise.resolve({})} />, content: "Chats ready" },
   { name: "following feed", page: () => <FeedPage />, content: "No activity yet" },
   { name: "review form", page: () => <NewReviewPage />, content: "Review form ready" },
   {
@@ -47,6 +49,11 @@ beforeEach(() => {
   mocks.getHikers.mockResolvedValue([]);
   mocks.getReviews.mockResolvedValue([]);
   mocks.getFollowing.mockResolvedValue([]);
+  mocks.getChatData.mockImplementation(async () => {
+    const user = await mocks.getCurrentUser();
+    if (!user) mocks.redirect("/login");
+    return { threads: [], contacts: [], trails: [], me: user };
+  });
 });
 
 describe.each(routes)("$name access", ({ page, content }) => {

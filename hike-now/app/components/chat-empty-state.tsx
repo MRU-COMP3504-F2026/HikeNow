@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { ChatPerson } from "../chats/types";
 import Avatar from "./avatar";
-import FollowButton from "./follow-button";
 import { TrailIcon } from "./icons";
 
 export type ChatEmptyStateProps = {
@@ -51,7 +50,9 @@ export default function ChatEmptyState({ suggestions }: ChatEmptyStateProps) {
                   <span className="text-nav font-medium text-text">{person.name}</span>
                   <span className="text-small text-text-subtle">{reviewed}</span>
                 </span>
-                <FollowButton name={person.name} />
+                <Link href={`/profile/${person.id}`} className={`${linkButton} border border-border text-primary`}>
+                  View profile
+                </Link>
               </li>
             ))}
           </ul>

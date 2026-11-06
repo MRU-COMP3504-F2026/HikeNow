@@ -37,14 +37,18 @@ export async function getFollowing(followerId: string) {
 // 4. INSERT FOLLOW (Follow a user)
 export async function followUser(followerId: string, followeeId: string) {
   await requireFollower(followerId);
+  if (followerId === followeeId) throw new Error("You cannot follow yourself.");
   const [newFollow] = await db
     .insert(follow)
     .values({ followerId, followeeId })
+    .onConflictDoNothing()
     .returning();
 
-  revalidatePath(`/hikers/${followeeId}`);
-  revalidatePath(`/hikers/${followerId}`);
-  return newFollow;
+  revalidatePath(`/profile/${followeeId}`);
+  revalidatePath(`/profile/${followerId}`);
+  revalidatePath("/feed");
+  revalidatePath("/chats");
+  return newFollow ?? { followerId, followeeId };
 }
 
 // 5. DELETE FOLLOW (Unfollow a user)
@@ -59,6 +63,8 @@ export async function unfollowUser(followerId: string, followeeId: string) {
       )
     );
 
-  revalidatePath(`/hikers/${followeeId}`);
-  revalidatePath(`/hikers/${followerId}`);
+  revalidatePath(`/profile/${followeeId}`);
+  revalidatePath(`/profile/${followerId}`);
+  revalidatePath("/feed");
+  revalidatePath("/chats");
 }

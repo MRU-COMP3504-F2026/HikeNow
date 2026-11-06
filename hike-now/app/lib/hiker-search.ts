@@ -1,7 +1,9 @@
 /** Funciones puras para mostrar y buscar hikers y rutas (sin acceso a la base de datos). */
 
-/** Nombre público de un hiker: la parte del email antes de la "@", con la primera letra en mayúscula. */
-export function hikerName(email: string): string {
+/** Nombre público de un hiker: el nombre elegido o, si no hay, la parte del email antes de la "@" con la primera letra en mayúscula. */
+export function hikerName(email: string, displayName?: string | null): string {
+  const chosen = displayName?.trim();
+  if (chosen) return chosen;
   const local = email.split("@")[0] ?? "";
   return local.charAt(0).toUpperCase() + local.slice(1);
 }
@@ -11,8 +13,8 @@ export const profileHref = (id: string) => `/profile/${id}`;
 
 const normalize = (text: string) => text.trim().toLowerCase();
 
-/** Hikers cuyo nombre público (parte local del email) o descripción contienen la búsqueda. */
-export function matchHikers<T extends { email: string; description?: string | null }>(
+/** Hikers cuyo nombre público, parte local del email o descripción contienen la búsqueda. */
+export function matchHikers<T extends { email: string; displayName?: string | null; description?: string | null }>(
   hikers: T[],
   query: string,
 ): T[] {
@@ -21,6 +23,7 @@ export function matchHikers<T extends { email: string; description?: string | nu
   return hikers
     .filter(
       (h) =>
+        normalize(h.displayName ?? "").includes(q) ||
         normalize(h.email.split("@")[0] ?? "").includes(q) ||
         normalize(h.description ?? "").includes(q),
     )

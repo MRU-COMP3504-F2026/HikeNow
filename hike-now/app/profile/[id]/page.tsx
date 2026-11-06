@@ -6,6 +6,7 @@ import Navbar from "../../components/session-navbar";
 import ReviewCard, { type ReviewCondition } from "../../components/review-card";
 import UserProfile from "../../components/user-profile";
 import DeleteAccount from "../../components/delete-account";
+import EditProfile from "../../components/edit-profile";
 import { getCurrentUser } from "../../lib/session";
 
 // Import Server Actions
@@ -81,7 +82,7 @@ async function ProfileContent({ params }: PageProps) {
     getFollowing(hiker.id),
   ]);
 
-  const displayName = hikerName(hiker.email);
+  const displayName = hikerName(hiker.email, hiker.displayName);
 
   // Filter reviews written by this hiker
   const reviews = reviewsData
@@ -120,9 +121,26 @@ async function ProfileContent({ params }: PageProps) {
             { label: "Followers", value: followers.length },
             { label: "Following", value: following.length },
           ]}
-          action={isOwnProfile ? undefined : <FollowButton name={displayName} />}
-          className="mb-10"
+          action={isOwnProfile ? undefined : (
+            <div className="flex flex-wrap gap-2">
+              <FollowButton
+                key={hiker.id}
+                name={displayName}
+                followerId={currentUser?.id}
+                followeeId={hiker.id}
+                initialFollowing={followers.some((row) => row.followerId === currentUser?.id)}
+              />
+            </div>
+          )}
+          className={isOwnProfile ? "mb-6" : "mb-10"}
         />
+        {isOwnProfile && (
+          <EditProfile
+            defaultName={hikerName(hiker.email)}
+            initialProfile={{ displayName: hiker.displayName, bio: hiker.description }}
+            className="mb-10"
+          />
+        )}
 
         <h2 className="mb-4 text-heading font-semibold text-ink">
           Review history ({reviews.length})

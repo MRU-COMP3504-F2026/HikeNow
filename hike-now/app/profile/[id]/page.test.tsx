@@ -28,6 +28,10 @@ vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
 vi.mock("../../components/session-navbar", () => ({ default: () => null }));
 vi.mock("../../components/footer", () => ({ default: () => null }));
 vi.mock("../../components/delete-account", () => ({ default: () => <button>Delete account</button> }));
+vi.mock("../../components/edit-profile", () => ({
+  default: ({ defaultName, initialProfile }: { defaultName: string; initialProfile: { displayName: string | null; bio: string | null } }) =>
+    <button data-default-name={defaultName} data-name={initialProfile.displayName ?? ""} data-bio={initialProfile.bio ?? ""}>Edit profile</button>,
+}));
 vi.mock("../../components/follow-button", () => ({
   default: ({ name }: { name: string }) => <button>{`Follow ${name}`}</button>,
 }));
@@ -101,7 +105,24 @@ describe("profile page", () => {
     expect(html.indexOf("Newer review")).toBeLessThan(html.indexOf("Older review"));
     expect(html).not.toContain("Different author review");
     expect(html).toContain("Delete account");
+    expect(html).toContain('data-default-name="Alex"');
+    expect(html).toContain('data-bio="I like mountains."');
     expect(html).not.toContain("Follow Alex");
+  });
+
+  it("shows a chosen name instead of the email-derived name", async () => {
+    mocks.getHikerById.mockResolvedValue({
+      id: "hiker-id", email: "alex@example.com", displayName: "Alex Summit",
+      description: "Line one\nLine two", joinedAt: null,
+    });
+    mocks.getCurrentUser.mockResolvedValue({ id: "another-hiker", email: "other@example.com" });
+    const { html, errors } = await renderProfile("hiker-id");
+
+    expect(errors).toEqual([]);
+    expect(html).toContain("Alex Summit</h1>");
+    expect(html).toContain("Follow Alex Summit");
+    expect(html).toContain("Line one\nLine two");
+    expect(html).not.toContain("Edit profile");
   });
 
   it.each([
@@ -115,6 +136,7 @@ describe("profile page", () => {
     expect(html).toContain("Follow Alex");
     expect(html).not.toContain("Your dashboard");
     expect(html).not.toContain("Delete account");
+    expect(html).not.toContain("Edit profile");
   });
 
   it("returns not found for a missing profile without loading follow counts", async () => {

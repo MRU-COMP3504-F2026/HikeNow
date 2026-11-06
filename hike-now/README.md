@@ -28,7 +28,7 @@ It is transactional and safe to rerun. Existing email duplicates differing
 only in case must be resolved first; unsupported legacy hashes abort the setup
 rather than being silently overwritten.
 
-Public hiker actions return only id, email, description, and join date. The setup also
+Public hiker actions return only id, email, chosen name, bio (description), and join date. The setup also
 removes Supabase anon/authenticated access to the password column and sessions.
 Sessions expire after seven days, store only SHA-256 token hashes in PostgreSQL,
 and are revoked on logout or replaced on login. Production requires HTTPS
@@ -38,8 +38,7 @@ Login/account creation is limited to ten attempts per normalized email per
 Rerun `db:auth` periodically to remove expired sessions and rate-limit records.
 
 This is application authentication, **not** a Supabase Auth JWT: it does not
-change `auth.uid()` or authenticate the optional Supabase client. Chats and
-follow controls that currently use mock behavior are otherwise unchanged.
+change `auth.uid()` or authenticate the optional Supabase client.
 Signed-out visitors are redirected to `/login` when opening chats, the
 following feed, or a review form, or when attempting to follow someone.
 Chat actions and follow controls recheck the session when used, including
@@ -57,7 +56,8 @@ After the authentication setup, run the additive profile migration:
 npm run db:profiles
 ```
 
-This adds join dates for new accounts and creation dates for new reviews.
+This adds join dates for new accounts, creation dates for new reviews, and an
+optional `display_name` column for chosen names.
 Existing dates remain unknown: legacy accounts display "Not recorded", and
 legacy reviews are listed after dated reviews. The migration is transactional
 and safe to rerun; deploy it before starting the updated application.
@@ -68,6 +68,11 @@ before checking expiry; they are not evaluated during prerendering.
 Click the avatar or email in the navbar to open `/profile`, which redirects to
 your dashboard. It shows the join date and complete review history, newest
 first, with links to the reviewed trails. Distance tracking is deferred.
+Select **Edit profile** on your dashboard to set a name (up to 50 characters)
+and a bio (up to 500 characters, line breaks allowed). The server saves them
+only for the signed-in hiker. A chosen name is shown on profiles, reviews,
+search, and chats; leaving it blank restores the name derived from your email.
+The bio is stored in the existing `hiker.description` column.
 Review forms require login; the server derives ownership from the session,
 never from a client-provided hiker ID. Review updates and deletion also require
 ownership. Failed saves display an error instead of a success confirmation.
@@ -78,6 +83,56 @@ current password. Database foreign keys cascade deletion to reviews,
 memberships, follows, and every session; the browser cookie is cleared and you
 are redirected to login. Uploaded storage objects are not deleted by database
 cascades and require a separate storage retention/cleanup policy.
+
+### Following, direct messages, and group chats
+
+Before deploying the chat changes, run the additive, transactional migration:
+
+```bash
+npm run db:chats
+```
+
+It creates private conversations, per-hiker request/read/block state, and messages,
+and upgrades existing direct conversations for group chats without replacing them.
+It is safe to rerun and uses the same server-only database connection as authentication.
+No mock conversations are imported. Deleting an account removes its direct
+conversations and authored messages; group chats remain available to their other members.
+
+Follow on a public profile now saves the relationship to PostgreSQL. Following
+shows a Message button; click it to open the existing conversation or create one.
+Chats also offers conversation starters for the hikers you follow.
+New conversations require following the recipient. Existing accepted conversations
+remain usable after unfollowing. Incoming messages appear in Requests unless you
+follow the sender or previously accepted the conversation. Accept, Delete (hide for
+your account), and Block are persisted; blocking prevents both participants sending
+further messages. Unblocking is not yet exposed.
+
+Choose **New chat** in Chats to open the recipient picker. Search the hikers
+you follow by name or handle, use **+** to add them to **To**, and remove
+recipients before starting if needed. Select one recipient for a direct chat
+(reusing an existing conversation), or 2-14 for a group (3-15 members including
+you). Group names are optional; by default the selected hikers' names are used.
+Each group is saved separately,
+even when it has the same members as another group. Invitees who follow the
+creator see the group in Messages; others see a request that they can accept
+or decline. Following the creator later also moves the invitation to Messages.
+Group messages identify their sender, and hike proposals collect each member's
+RSVP. Group members can leave after confirmation; declining or leaving affects
+only that group and does not stop the remaining members from chatting. Leaving
+is permanent for that group; adding members or rejoining an existing group is
+not yet supported.
+
+Text messages (1-4000 characters), trail shares, hike proposals, and individual RSVPs
+are saved server-side. Trail cards use actual database trails. Chats refreshes every
+10 seconds while the page is visible, so incoming messages appear without reloading.
+All reads and mutations require a valid session; only participants can access a chat.
+Failed actions display an error and failed message saves retain the draft.
+
+Run the optional PostgreSQL integration tests with `CHAT_INTEGRATION=1 npm test --
+app/actions/chats.integration.test.ts app/actions/group-chats.integration.test.ts`
+after applying the migration. They create isolated test accounts/trails, exercise
+direct and group conversations, and remove only their own fixtures afterward.
+The regular `npm test` run skips these database tests.
 
 First, run the development server:
 

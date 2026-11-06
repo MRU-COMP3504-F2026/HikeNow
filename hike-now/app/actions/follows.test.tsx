@@ -103,7 +103,8 @@ describe("getFollowing", () => {
 describe("followUser", () => {
   function mockInsert(result: unknown[]) {
     const returning = vi.fn().mockResolvedValue(result);
-    const values = vi.fn(() => ({ returning }));
+    const onConflictDoNothing = vi.fn(() => ({ returning }));
+    const values = vi.fn(() => ({ onConflictDoNothing }));
     db.insert.mockReturnValue({ values });
     return { values, returning };
   }
@@ -123,17 +124,27 @@ describe("followUser", () => {
 
     await followUser(A, B);
 
-    expect(revalidatePath).toHaveBeenCalledTimes(2);
-    expect(revalidatePath).toHaveBeenCalledWith(`/hikers/${B}`);
-    expect(revalidatePath).toHaveBeenCalledWith(`/hikers/${A}`);
+    expect(revalidatePath).toHaveBeenCalledTimes(4);
+    expect(revalidatePath).toHaveBeenCalledWith(`/profile/${B}`);
+    expect(revalidatePath).toHaveBeenCalledWith(`/profile/${A}`);
+    expect(revalidatePath).toHaveBeenCalledWith("/feed");
+    expect(revalidatePath).toHaveBeenCalledWith("/chats");
   });
 
   it("propagates database errors and does not revalidate", async () => {
     const returning = vi.fn().mockRejectedValue(new Error("duplicate key"));
-    db.insert.mockReturnValue({ values: vi.fn(() => ({ returning })) });
+    db.insert.mockReturnValue({ values: vi.fn(() => ({ onConflictDoNothing: () => ({ returning }) })) });
 
     await expect(followUser(A, B)).rejects.toThrow("duplicate key");
     expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it("treats an existing follow as success and rejects self-following", async () => {
+    mockInsert([]);
+    await expect(followUser(A, B)).resolves.toEqual({ followerId: A, followeeId: B });
+    db.insert.mockClear();
+    await expect(followUser(A, A)).rejects.toThrow("yourself");
+    expect(db.insert).not.toHaveBeenCalled();
   });
 
   it("redirects signed-out users and rejects attempts to act for another user", async () => {
@@ -173,9 +184,9 @@ describe("unfollowUser", () => {
     mockDelete();
 
     await expect(unfollowUser(A, B)).resolves.toBeUndefined();
-    expect(revalidatePath).toHaveBeenCalledTimes(2);
-    expect(revalidatePath).toHaveBeenCalledWith(`/hikers/${B}`);
-    expect(revalidatePath).toHaveBeenCalledWith(`/hikers/${A}`);
+    expect(revalidatePath).toHaveBeenCalledTimes(4);
+    expect(revalidatePath).toHaveBeenCalledWith(`/profile/${B}`);
+    expect(revalidatePath).toHaveBeenCalledWith(`/profile/${A}`);
   });
 
   it("propagates database errors and does not revalidate", async () => {

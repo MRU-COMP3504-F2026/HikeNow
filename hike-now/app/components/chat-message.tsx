@@ -8,14 +8,19 @@ export type ChatMessageViewProps = {
   me: ChatPerson;
   onRsvp: (messageId: string, value: Rsvp) => void;
   actionPending?: boolean;
+  showSender?: boolean;
 };
 
 /** Un mensaje del chat: texto (con menciones resaltadas), ruta compartida o propuesta. */
-export default function ChatMessageView({ message, me, onRsvp, actionPending = false }: ChatMessageViewProps) {
+export default function ChatMessageView({ message, me, onRsvp, actionPending = false, showSender = false }: ChatMessageViewProps) {
   const mine = message.from === "me";
 
   return (
     <div className={["flex", mine ? "justify-end" : "justify-start"].join(" ")}>
+      <div className={["flex w-full flex-col", mine ? "items-end" : "items-start"].join(" ")}>
+      {showSender && (
+        <span className="mb-1 px-1 text-small text-text-subtle">{mine ? "You" : message.sender?.name}</span>
+      )}
       {message.kind === "text" && (
         <p
           className={[
@@ -49,6 +54,7 @@ export default function ChatMessageView({ message, me, onRsvp, actionPending = f
           disabled={actionPending}
         />
       )}
+      </div>
     </div>
   );
 }

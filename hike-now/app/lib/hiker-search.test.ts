@@ -6,6 +6,12 @@ describe("hikerName", () => {
     expect(hikerName("alex.m@example.com")).toBe("Alex.m");
     expect(hikerName("")).toBe("");
   });
+
+  it("prefers a chosen display name and ignores blank ones", () => {
+    expect(hikerName("alex@example.com", "  Alex Summit ")).toBe("Alex Summit");
+    expect(hikerName("alex@example.com", "   ")).toBe("Alex");
+    expect(hikerName("alex@example.com", null)).toBe("Alex");
+  });
 });
 
 describe("profileHref", () => {

@@ -64,7 +64,7 @@ async function SearchResults({ searchParams }: PageProps) {
                     <UserIcon size={24} />
                   </span>
                   <span className="flex min-w-0 flex-col">
-                    <span className="text-nav font-medium text-ink">{hikerName(h.email)}</span>
+                    <span className="text-nav font-medium text-ink">{hikerName(h.email, h.displayName)}</span>
                     {h.description && (
                       <span className="truncate text-small text-text-muted">{h.description}</span>
                     )}
