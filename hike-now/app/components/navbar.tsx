@@ -7,6 +7,7 @@ import { CloseIcon, MenuIcon, SearchIcon, UserIcon } from "./icons";
 import { navLinks } from "./nav-links";
 import favicon2 from '../favicon2.ico';
 import { logout } from "@/app/actions/auth";
+import ThemeToggle from "./theme-toggle";
 
 export type NavbarProps = {
   /** Usuario con sesión iniciada. Si es null/undefined se muestra el botón Login. */
@@ -14,8 +15,7 @@ export type NavbarProps = {
 };
 
 const loginClasses =
-  "inline-flex items-center justify-center rounded-control bg-ink px-4 py-2.5 text-small font-medium text-white shadow-control transition-colors hover:bg-ink/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
-
+  "inline-flex items-center justify-center rounded-control bg-ink px-4 py-2.5 text-small font-medium text-background shadow-control transition-colors hover:bg-ink/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 function Avatar() {
   return (
     <span className="grid size-10 place-items-center rounded-full bg-primary text-on-primary shadow-control">
@@ -105,6 +105,9 @@ export default function Navbar({ user = null }: NavbarProps) {
               {label}
             </Link>
           ))}
+
+          <ThemeToggle />
+
           {user ? (
             <div className="flex items-center gap-3">
               <UserBadge user={user} textClass="text-heading text-primary" />
@@ -149,6 +152,9 @@ export default function Navbar({ user = null }: NavbarProps) {
               {label}
             </Link>
           ))}
+
+          <ThemeToggle />
+
           {user ? (
             <div className="flex items-center gap-3">
               <UserBadge user={user} textClass="text-small text-primary" onNavigate={() => setOpen(false)} />
@@ -169,7 +175,7 @@ export default function Navbar({ user = null }: NavbarProps) {
       )}
 
       {/* Franja verde de la marca */}
-      <div aria-hidden="true" className="h-6 bg-primary" />
+      <div aria-hidden="true" className="h-6 bg-brand-strip" />
     </header>
   );
 }
