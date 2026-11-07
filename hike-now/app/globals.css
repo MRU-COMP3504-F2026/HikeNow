@@ -2,6 +2,7 @@
 
 @theme {
   /* Colores de marca */
+  --color-brand-strip: #283D25;
   --color-primary: #283D25;
   --color-on-primary: #F5F5F5;
   --color-danger: #EC221F;
@@ -32,8 +33,64 @@
   --shadow-control: 0 0.75px 1.5px rgba(0, 0, 0, 0.05);
 }
 
+:root {
+  --color-brand-strip: #283D25;
+  color-scheme: light;
+
+  --color-primary: #283D25;
+  --color-on-primary: #F5F5F5;
+
+  --color-background: #FFFFFF;
+  --color-ink: #000000;
+  --color-text: #1E1E1E;
+  --color-text-muted: #454545;
+  --color-text-subtle: #757575;
+  --color-placeholder: #B3B3B3;
+  --color-icon: #828282;
+  --color-surface: #F7F7F7;
+  --color-border: #D9D9D9;
+  --color-border-soft: #E6E6E6;
+  --color-field-border: #E0E0E0;
+}
+
+html.dark {
+  color-scheme: dark;
+
+  --color-primary: #A8C7A3;
+  --color-on-primary: #142012;
+  --color-brand-strip: #1F2D1D;
+
+  --color-background: #121512;
+  --color-ink: #F5F5F5;
+  --color-text: #EAEAEA;
+  --color-text-muted: #C7C7C7;
+  --color-text-subtle: #A0A0A0;
+  --color-placeholder: #858585;
+  --color-icon: #BDBDBD;
+  --color-surface: #1C211C;
+  --color-border: #404640;
+  --color-border-soft: #303630;
+  --color-field-border: #4A504A;
+}
+
 body {
   background: var(--color-background);
   color: var(--color-text);
   font-family: var(--font-sans);
+}
+
+.theme-sun {
+  display: none;
+}
+
+.theme-moon {
+  display: block;
+}
+
+html.dark .theme-sun {
+  display: block;
+}
+
+html.dark .theme-moon {
+  display: none;
 }
