@@ -4,15 +4,18 @@ import { useEffect } from "react";
 
 export default function ThemeToggle() {
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
+  const savedTheme = localStorage.getItem("theme");
 
-    const shouldUseDark =
-      savedTheme === "dark" ||
-      (!savedTheme &&
-        window.matchMedia("(prefers-color-scheme: dark)").matches);
+  const prefersDark =
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches;
 
-    document.documentElement.classList.toggle("dark", shouldUseDark);
-  }, []);
+  const shouldUseDark =
+    savedTheme === "dark" ||
+    (!savedTheme && prefersDark);
+
+  document.documentElement.classList.toggle("dark", shouldUseDark);
+}, []);
 
   function toggleTheme() {
     const isDark = document.documentElement.classList.toggle("dark");
