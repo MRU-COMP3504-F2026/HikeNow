@@ -3,11 +3,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   getCurrentUser: vi.fn(), createClient: vi.fn(), insert: vi.fn(), values: vi.fn(),
-  returning: vi.fn(), select: vi.fn(), where: vi.fn(), update: vi.fn(), delete: vi.fn(),
+  returning: vi.fn(), select: vi.fn(), where: vi.fn(), update: vi.fn(), delete: vi.fn(), execute: vi.fn(),
   revalidatePath: vi.fn(), revalidateTag: vi.fn(),
   redirect: vi.fn(),
 }));
-vi.mock("@/app/db", () => ({ db: { insert: mocks.insert, select: mocks.select, update: mocks.update, delete: mocks.delete } }));
+vi.mock("@/app/db", () => ({ db: { insert: mocks.insert, select: mocks.select, update: mocks.update, delete: mocks.delete, execute: mocks.execute } }));
 vi.mock("@/app/lib/session", () => ({ getCurrentUser: mocks.getCurrentUser }));
 vi.mock("@/app/db/server", () => ({ createClient: mocks.createClient }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
@@ -15,7 +15,7 @@ vi.mock("next/cache", () => ({
   unstable_cache: (callback: () => unknown) => callback,
   revalidatePath: mocks.revalidatePath, revalidateTag: mocks.revalidateTag,
 }));
-import { createReview, updateReview, deleteReview, getReviews, getReviewById } from "./reviews";
+import { createReview, createReviewPhotoUpload, updateReview, deleteReview, getReviews, getReviewById } from "./reviews";
 
 function form() {
   const data = new FormData();
@@ -106,5 +106,48 @@ describe("review ownership", () => {
     await expect(deleteReview("someone-elses-review")).rejects.toThrow("not owned by you");
     expect(mocks.update).not.toHaveBeenCalled();
     expect(mocks.delete).not.toHaveBeenCalled();
+  });
+});
+
+describe("review photos", () => {
+  const ownPath = "reviews/session-author/0b9f8e1c-2d3a-4b5c-8d7e-6f5a4b3c2d1e.jpg";
+  const storage = {
+    createSignedUploadUrl: vi.fn(),
+    getPublicUrl: vi.fn(),
+  };
+
+  beforeEach(() => {
+    mocks.createClient.mockResolvedValue({ storage: { from: () => storage } });
+    storage.createSignedUploadUrl.mockImplementation(async (path: string) => ({ data: { path, token: "signed-token" }, error: null }));
+    storage.getPublicUrl.mockImplementation((path: string) => ({ data: { publicUrl: `https://cdn.test/hike-reviews/${path}` } }));
+  });
+
+  it("signs uploads into the session hiker's folder and rejects invalid files", async () => {
+    const signed = await createReviewPhotoUpload({ type: "image/jpeg", size: 1024 });
+    expect(signed).toMatchObject({ success: true, token: "signed-token" });
+    expect(signed.success && signed.path).toMatch(/^reviews\/session-author\/[a-f0-9-]{36}\.jpg$/);
+    expect(await createReviewPhotoUpload({ type: "application/pdf", size: 1024 })).toHaveProperty("success", false);
+    expect(await createReviewPhotoUpload({ type: "image/png", size: 7 * 1024 * 1024 })).toHaveProperty("success", false);
+    expect(storage.createSignedUploadUrl).toHaveBeenCalledTimes(1);
+  });
+
+  it("stores the public URL of an uploaded photo", async () => {
+    mocks.execute.mockResolvedValue([{ "?column?": 1 }]);
+    const data = form();
+    data.set("photoPath", ownPath);
+    expect(await createReview(data)).toHaveProperty("success", true);
+    expect(mocks.values).toHaveBeenCalledWith(expect.objectContaining({ photo: `https://cdn.test/hike-reviews/${ownPath}` }));
+  });
+
+  it("rejects photo paths owned by other hikers or missing from storage", async () => {
+    const forged = form();
+    forged.set("photoPath", ownPath.replace("session-author", "other-hiker"));
+    expect(await createReview(forged)).toHaveProperty("success", false);
+
+    mocks.execute.mockResolvedValue([]);
+    const missing = form();
+    missing.set("photoPath", ownPath);
+    expect(await createReview(missing)).toHaveProperty("success", false);
+    expect(mocks.insert).not.toHaveBeenCalled();
   });
 });

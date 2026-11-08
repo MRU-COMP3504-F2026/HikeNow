@@ -3,7 +3,7 @@ import Footer from "../../../components/footer";
 import Navbar from "../../../components/session-navbar";
 import ReviewForm from "../../../components/review-form";
 import { getHikes } from "../../../actions/hikes";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "../../../lib/session";
 
 // Disable instant blocking route check for parameter resolution
@@ -25,26 +25,15 @@ async function ReviewFormContent({ params }: PageProps) {
 
   const hikes = (await getHikes()) ?? [];
 
-  const trails = hikes.map((h) => ({
-    id: h.id,
-    name: h.name,
-    photo: h.photo ?? "/images/placeholder-trail.jpg",
-    equipment: h.equipment ?? "",
-  }));
+  const hike = hikes.find((h) => h.id === trailId);
+  if (!hike) notFound();
 
-  const initialTrailId = trails.some((t) => t.id === trailId)
-    ? trailId
-    : trails[0]?.id ?? "";
-
-  if (trails.length === 0) {
-    return (
-      <p className="text-text-subtle">
-        No hiking trails found in the database.
-      </p>
-    );
-  }
-
-  return <ReviewForm trails={trails} initialTrailId={initialTrailId} />;
+  return <ReviewForm trail={{
+    id: hike.id,
+    name: hike.name,
+    photo: hike.photo ?? "/images/placeholder-trail.jpg",
+    equipment: hike.equipment ?? "",
+  }} />;
 }
 
 export default function LeaveReviewPage({ params }: PageProps) {

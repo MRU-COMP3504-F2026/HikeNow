@@ -7,6 +7,10 @@ import { and, eq, sql } from "drizzle-orm";
 import { getCurrentUser } from "@/app/lib/session";
 import { redirect } from "next/navigation";
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
+import { randomUUID } from "node:crypto";
+import {
+  REVIEW_PHOTO_BUCKET, REVIEW_PHOTO_TYPES, isOwnedReviewPhotoPath, reviewPhotoError,
+} from "@/app/lib/review-photos";
 
 // 1. SELECT ALL REVIEWS (Cached for prerendering)
 export const getReviews = unstable_cache(
@@ -30,7 +34,27 @@ export async function getReviewById(id: string) {
   )();
 }
 
-// 3. CREATE REVIEW
+// 3. SIGN A REVIEW PHOTO UPLOAD
+// The browser uploads straight to Supabase Storage with this token (standard presigned upload),
+// so photos never pass through the Server Action body limit.
+export async function createReviewPhotoUpload(photo: { type: string; size: number }) {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+
+  const invalid = reviewPhotoError(photo);
+  if (invalid) return { success: false as const, error: invalid };
+
+  const path = `reviews/${user.id}/${randomUUID()}.${REVIEW_PHOTO_TYPES[photo.type]}`;
+  const supabase = await createClient();
+  const { data, error } = await supabase.storage.from(REVIEW_PHOTO_BUCKET).createSignedUploadUrl(path);
+  if (error || !data) {
+    console.error("Review photo upload signing failed:", error);
+    return { success: false as const, error: "Could not upload your photo. Please try again later." };
+  }
+  return { success: true as const, path: data.path, token: data.token };
+}
+
+// 4. CREATE REVIEW
 export async function createReview(formData: FormData) {
   let user: Awaited<ReturnType<typeof getCurrentUser>>;
   try {
@@ -47,27 +71,7 @@ export async function createReview(formData: FormData) {
     if (typeof hikeId !== "string" || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(hikeId)) {
       return { success: false, error: "Please select a valid trail." };
     }
-    const photoFile = formData.get("photo");
-
-    let photoUrl: string | null = null;
-
-    if (photoFile instanceof File && photoFile.size > 0) {
-      const supabase = await createClient();
-      const fileExt = photoFile.name.split(".").pop();
-      const fileName = `reviews/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("hike-reviews")
-        .upload(fileName, photoFile, { contentType: photoFile.type });
-
-      if (uploadError) throw new Error(uploadError.message);
-
-      const { data: publicUrlData } = supabase.storage
-        .from("hike-reviews")
-        .getPublicUrl(uploadData.path);
-
-      photoUrl = publicUrlData.publicUrl;
-    }
+    const photoUrl = await readReviewPhoto(formData, user.id);
 
     const [newReview] = await db
       .insert(review)
@@ -91,33 +95,16 @@ export async function createReview(formData: FormData) {
   }
 }
 
-// 4. UPDATE REVIEW
+// 5. UPDATE REVIEW
 export async function updateReview(id: string, formData: FormData) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   const [existing] = await db.select().from(review).where(and(eq(review.id, id), eq(review.hikerId, user.id)));
   if (!existing) throw new Error("Review not found or not owned by you.");
-  const supabase = await createClient();
-
   const fields = readReviewFields(formData);
-  const photoFile = formData.get("photo");
-
+  const photoUrl = await readReviewPhoto(formData, user.id);
   const updateFields: Partial<typeof review.$inferInsert> = { ...fields };
-  if (photoFile instanceof File && photoFile.size > 0) {
-    const fileExt = photoFile.name.split(".").pop();
-    const fileName = `reviews/${Date.now()}.${fileExt}`;
-
-    const { data: uploadData, error } = await supabase.storage
-      .from("hike-reviews")
-      .upload(fileName, photoFile, { contentType: photoFile.type });
-
-    if (error) throw new Error(error.message);
-    const { data: publicUrlData } = supabase.storage
-      .from("hike-reviews")
-      .getPublicUrl(uploadData.path);
-
-    updateFields.photo = publicUrlData.publicUrl;
-  }
+  if (photoUrl) updateFields.photo = photoUrl;
 
   const [updated] = await db
     .update(review)
@@ -134,7 +121,7 @@ export async function updateReview(id: string, formData: FormData) {
   return updated;
 }
 
-// 5. DELETE REVIEW
+// 6. DELETE REVIEW
 export async function deleteReview(id: string) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
@@ -144,9 +131,9 @@ export async function deleteReview(id: string) {
   if (!existing) throw new Error("Review not found or not owned by you.");
 
   if (existing?.photo) {
-    const filePath = existing.photo.split("/hike-reviews/").pop();
+    const filePath = existing.photo.split(`/${REVIEW_PHOTO_BUCKET}/`).pop();
     if (filePath) {
-      const { error } = await supabase.storage.from("hike-reviews").remove([filePath]);
+      const { error } = await supabase.storage.from(REVIEW_PHOTO_BUCKET).remove([filePath]);
       if (error) throw new Error(error.message);
     }
   }
@@ -161,6 +148,22 @@ export async function deleteReview(id: string) {
 }
 
 class ReviewValidationError extends Error {}
+
+async function readReviewPhoto(formData: FormData, hikerId: string) {
+  const path = formData.get("photoPath");
+  if (path === null || path === "") return null;
+  if (typeof path !== "string" || !isOwnedReviewPhotoPath(path, hikerId)) {
+    throw new ReviewValidationError("Invalid photo upload. Please try adding the photo again.");
+  }
+  const uploaded = await db.execute(
+    sql`select 1 from storage.objects where bucket_id = ${REVIEW_PHOTO_BUCKET} and name = ${path} limit 1`,
+  );
+  if (uploaded.length === 0) {
+    throw new ReviewValidationError("Your photo did not finish uploading. Please try again.");
+  }
+  const supabase = await createClient();
+  return supabase.storage.from(REVIEW_PHOTO_BUCKET).getPublicUrl(path).data.publicUrl;
+}
 
 function readReviewFields(formData: FormData) {
   function text(name: string, max: number) {
