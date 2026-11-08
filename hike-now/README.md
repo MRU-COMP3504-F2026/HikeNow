@@ -169,6 +169,9 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ### Review photos
 
+Start a review from a specific trail's review page. The form is locked to that
+trail; unknown trail IDs return 404, and `/reviews/new` redirects to `/reviews`.
+
 Review photos use Supabase Storage standard uploads with presigned URLs: a signed-in
 hiker's Server Action signs an upload path under `reviews/<hiker-id>/`, the browser uploads
 the file straight to the public `hike-reviews` bucket, and the review stores the photo's

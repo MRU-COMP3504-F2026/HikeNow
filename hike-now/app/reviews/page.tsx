@@ -198,17 +198,6 @@ export default async function ReviewsPage() {
             </h1>
           </div>
 
-          {/* Leave review button */}
-          <Link
-            href="/reviews/new"
-            className="flex cursor-pointer items-center gap-3 self-start text-heading text-primary transition-opacity hover:opacity-80"
-          >
-            <span>Leave a review</span>
-
-            <span className="flex size-8 items-center justify-center rounded-full border-2 border-primary pb-[1.5px] leading-none">
-              +
-            </span>
-          </Link>
         </section>
 
         {/* Reviews list */}

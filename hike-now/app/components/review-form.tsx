@@ -21,9 +21,7 @@ export type ReviewFormTrail = {
 };
 
 export type ReviewFormProps = {
-  trails: ReviewFormTrail[];
-  /** Id del trail preseleccionado. */
-  initialTrailId: string;
+  trail: ReviewFormTrail;
 };
 
 type Condition = "good" | "mild" | "bad";
@@ -102,12 +100,11 @@ async function uploadReviewPhoto(file: File) {
   return { success: true as const, path: signed.path };
 }
 
-export default function ReviewForm({ trails, initialTrailId }: ReviewFormProps) {
+export default function ReviewForm({ trail }: ReviewFormProps) {
   const router = useRouter();
   const fileInput = useRef<HTMLInputElement>(null);
 
   const [title, setTitle] = useState("");
-  const [trailId, setTrailId] = useState(initialTrailId);
   const [tags, setTags] = useState<string[]>([]);
   const [condition, setCondition] = useState<Condition | null>(null);
   const [rating, setRating] = useState(0);
@@ -119,7 +116,6 @@ export default function ReviewForm({ trails, initialTrailId }: ReviewFormProps) 
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const trail = trails.find((t) => t.id === trailId) ?? trails[0];
   /*
   const equipmentOptions = trail.equipment
     .split(",")
@@ -159,11 +155,6 @@ export default function ReviewForm({ trails, initialTrailId }: ReviewFormProps) 
     });
   }
 
-  function changeTrail(id: string) {
-    setTrailId(id);
-    setEquipment([]); // el equipamiento depende del trail
-  }
-
 async function handleSave() {
   if (saving) return;
   if (!title.trim()) {
@@ -183,7 +174,7 @@ async function handleSave() {
 
   try {
     const formData = new FormData();
-    formData.append("hikeId", trailId);
+    formData.append("hikeId", trail.id);
     formData.append("rating", rating.toString());
     formData.append("tags", tags.join(", "));
     formData.append("condition", condition ?? "good");
@@ -250,18 +241,12 @@ async function handleSave() {
               <label htmlFor="trail" className={labelClasses}>
                 Trail
               </label>
-              <select
+              <input
                 id="trail"
-                value={trailId}
-                onChange={(e) => changeTrail(e.target.value)}
+                value={trail.name}
+                readOnly
                 className="rounded-control border border-border bg-background px-3 py-2 text-small text-text focus-visible:outline-2 focus-visible:outline-primary"
-              >
-                {trails.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
 
             <div className="flex flex-col gap-2">

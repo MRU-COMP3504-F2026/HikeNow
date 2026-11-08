@@ -19,7 +19,7 @@ beforeEach(() => {
 });
 
 function completeForm(photo?: File) {
-  const { container } = render(<ReviewForm trails={[{ id: "trail-id", name: "Test trail", photo: "/trail.jpg", equipment: "" }]} initialTrailId="trail-id" />);
+  const { container } = render(<ReviewForm trail={{ id: "trail-id", name: "Test trail", photo: "/trail.jpg", equipment: "" }} />);
   if (photo) fireEvent.change(container.querySelector('input[type="file"]')!, { target: { files: [photo] } });
   fireEvent.change(screen.getByLabelText(/Title/), { target: { value: "Great hike" } });
   fireEvent.click(screen.getByRole("radio", { name: "Good" }));
@@ -34,6 +34,10 @@ it("shows an error rather than the saved dialog when the server rejects a review
   expect(screen.queryByText("Saved!")).not.toBeInTheDocument();
   const data = createReview.mock.calls[0][0] as FormData;
   expect(data.has("hikerId")).toBe(false);
+  expect(data.get("hikeId")).toBe("trail-id");
+  expect(screen.getByLabelText("Trail")).toHaveAttribute("readonly");
+  expect(screen.getByLabelText("Trail")).toHaveValue("Test trail");
+  expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
 });
 
 it("shows the saved confirmation only after a successful response", async () => {
