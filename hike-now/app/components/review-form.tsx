@@ -8,7 +8,9 @@ import Modal from "./modal";
 import StarRating from "./star-rating";
 import Tag from "./tag";
 import TagPicker from "./tag-picker";
-import { createReview } from "../actions/reviews";
+import { createBrowserClient } from "@supabase/ssr";
+import { createReview, createReviewPhotoUpload } from "../actions/reviews";
+import { REVIEW_PHOTO_ACCEPT, REVIEW_PHOTO_BUCKET, reviewPhotoError } from "../lib/review-photos";
 
 export type ReviewFormTrail = {
   id: string;
@@ -50,7 +52,8 @@ const EQUIPMENT_OPTIONS = [
   "Sunscreen",
   "Backpack",
 ];
-const MAX_PHOTOS = 3;
+// Reviews store a single photo (review.photo).
+const MAX_PHOTOS = 1;
 const MAX_COMMENT = 500;
 
 const conditions: {
@@ -78,6 +81,25 @@ function AddCircle({ label, onClick }: { label: string; onClick: () => void }) {
       </span>
     </button>
   );
+}
+
+// Standard Supabase upload through a server-signed URL, so the file skips the Server Action body limit.
+async function uploadReviewPhoto(file: File) {
+  const signed = await createReviewPhotoUpload({ type: file.type, size: file.size });
+  if (!signed.success) return signed;
+
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  );
+  const { error } = await supabase.storage
+    .from(REVIEW_PHOTO_BUCKET)
+    .uploadToSignedUrl(signed.path, signed.token, file, { contentType: file.type });
+  if (error) {
+    console.error("Review photo upload failed:", error);
+    return { success: false as const, error: "Could not upload your photo. Please try again." };
+  }
+  return { success: true as const, path: signed.path };
 }
 
 export default function ReviewForm({ trails, initialTrailId }: ReviewFormProps) {
@@ -118,7 +140,10 @@ export default function ReviewForm({ trails, initialTrailId }: ReviewFormProps) 
 
   function addPhotos(files: FileList | null) {
     if (!files) return;
-    const images = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    const all = Array.from(files);
+    const images = all.filter((f) => !reviewPhotoError(f));
+    const rejected = all.find((f) => reviewPhotoError(f));
+    setError(rejected ? reviewPhotoError(rejected) : null);
     setPhotos((prev) =>
       [...prev, ...images.map((file) => ({ file, url: URL.createObjectURL(file) }))].slice(
         0,
@@ -165,12 +190,16 @@ async function handleSave() {
     formData.append("comments", comments);
     formData.append("title", title);
 
-    // Pass the actual binary File object from state so Supabase Storage receives it
-    if (photos[0]?.file) {
-      formData.append("photo", photos[0].file);
+    const photo = photos[0]?.file;
+    if (photo) {
+      const photoPath = await uploadReviewPhoto(photo);
+      if (!photoPath.success) {
+        setError(photoPath.error);
+        return;
+      }
+      formData.append("photoPath", photoPath.path);
     }
 
-    // Call your existing Server Action directly
     const result = await createReview(formData);
     if (!result.success) {
       setError(result.error ?? "Failed to save review.");
@@ -338,8 +367,7 @@ async function handleSave() {
             <input
               ref={fileInput}
               type="file"
-              accept="image/*"
-              multiple
+              accept={REVIEW_PHOTO_ACCEPT}
               hidden
               onChange={(e) => {
                 addPhotos(e.target.files);
