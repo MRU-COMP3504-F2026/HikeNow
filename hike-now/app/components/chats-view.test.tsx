@@ -22,6 +22,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 let stored: ChatThread[];
 beforeEach(() => {
   vi.resetAllMocks();
+  localStorage.clear();
   hasActiveSession.mockResolvedValue(true);
   getChatThreads.mockImplementation(async () => structuredClone(stored));
   markChatRead.mockImplementation(async (id) => {
@@ -350,7 +351,7 @@ describe("ChatsView", () => {
     const input = screen.getByLabelText("Message");
     fireEvent.change(input, { target: { value: "Keep my draft" } });
     fireEvent.click(screen.getByRole("button", { name: "Send message" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("Could not complete this action");
+    expect(await screen.findByRole("alert", {}, { timeout: 5000 })).toHaveTextContent("Could not complete this action");
     expect(input).toHaveValue("Keep my draft");
     expect(screen.queryByText("Keep my draft")).not.toBeInTheDocument();
   });

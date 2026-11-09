@@ -128,7 +128,7 @@ export default function ChatsView({
               await chats.decline(active.id, true);
               setThreadOpenOnMobile(false);
             }); }}
-            onSend={(text) => actionAuth.run(() => chats.sendText(text))}
+            onSend={(text, messageId) => actionAuth.run(() => chats.sendText(text, messageId))}
             onShareTrail={() => { void actionAuth.run(chats.shareTrail); }}
             onProposeHike={() => { void actionAuth.run(chats.proposeHike); }}
             onRsvp={(messageId, value) => { void actionAuth.run(() => chats.rsvp(messageId, value)); }}

@@ -65,7 +65,15 @@ describe.skipIf(process.env.CHAT_INTEGRATION !== "1")("PostgreSQL follow and mes
     state.user = bob;
     expect(await chats.getChatThreads()).toEqual([]);
     state.user = alice;
-    await chats.sendChatMessage(id, { kind: "text", text: "  Hello from the database  " });
+    const messageId = randomUUID();
+    const firstInput = { kind: "text" as const, text: "  Hello from the database  " };
+    const [firstDelivery, duplicateDelivery] = await Promise.all([
+      chats.sendChatMessage(id, firstInput, messageId),
+      chats.sendChatMessage(id, firstInput, messageId),
+    ]);
+    expect(firstDelivery.id).toBe(messageId);
+    expect(duplicateDelivery).toEqual(firstDelivery);
+    await expect(chats.sendChatMessage(id, firstInput, messageId)).resolves.toEqual(firstDelivery);
     state.user = bob;
     let threads = await chats.getChatThreads();
     expect(threads[0]).toMatchObject({

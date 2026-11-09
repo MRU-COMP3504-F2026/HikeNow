@@ -22,7 +22,7 @@ export type ChatThreadViewProps = {
   onDecline: () => void;
   onBlock?: () => void;
   onLeave?: () => void;
-  onSend: (text: string) => Promise<boolean>;
+  onSend: (text: string, messageId: string) => Promise<boolean>;
   onShareTrail: () => void;
   onProposeHike: () => void;
   onRsvp: (messageId: string, value: Rsvp) => void;
@@ -170,6 +170,7 @@ export default function ChatThreadView({
       ) : (
         <ChatComposer
           key={thread.id}
+          draftStorageKey={`hike-now:chat-draft:${me.id}:${thread.id}`}
           mentionOptions={mentionOptions}
           onSend={onSend}
           onShareTrail={onShareTrail}

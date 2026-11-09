@@ -14,6 +14,7 @@ async function ChatsContent({ searchParams }: { searchParams: Promise<{ thread?:
 
   return (
     <ChatsView
+      key={data.me.id}
       initialThreads={data.threads}
       initialThreadId={params.thread}
       contacts={data.contacts}

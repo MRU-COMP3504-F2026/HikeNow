@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { database, getCurrentUser } = vi.hoisted(() => ({
-  database: { select: vi.fn(), transaction: vi.fn() },
+  database: { select: vi.fn(), transaction: vi.fn(), insert: vi.fn(), update: vi.fn() },
   getCurrentUser: vi.fn(),
 }));
 vi.mock("../db", () => ({ db: database }));
@@ -86,12 +86,40 @@ describe("private chat actions", () => {
     expect(database.transaction).not.toHaveBeenCalled();
   });
 
+  it("rejects invalid delivery IDs before database access", async () => {
+    await expect(sendChatMessage(C, { kind: "text", text: "Hello" }, "not-a-uuid")).rejects.toThrow("Invalid");
+    expect(database.transaction).not.toHaveBeenCalled();
+  });
+
+  it("returns an already committed message on retry without inserting another", async () => {
+    selectResults([
+      [{ id: C, kind: "direct" }],
+      [{ hikerId: A, accepted: true }, { hikerId: B }],
+      [{ id: B, conversationId: C, senderId: A, content: { kind: "text", text: "Hello" } }],
+    ]);
+    await expect(sendChatMessage(C, { kind: "text", text: "Hello" }, B)).resolves.toMatchObject({
+      id: B, from: "me", kind: "text", text: "Hello",
+    });
+    expect(database.insert).not.toHaveBeenCalled();
+    expect(database.update).not.toHaveBeenCalled();
+  });
+
+  it("does not reuse another sender's message ID", async () => {
+    selectResults([
+      [{ id: C, kind: "direct" }],
+      [{ hikerId: A, accepted: true }, { hikerId: B }],
+      [{ id: B, conversationId: C, senderId: B, content: { kind: "text", text: "Not yours" } }],
+    ]);
+    await expect(sendChatMessage(C, { kind: "text", text: "Hello" }, B)).rejects.toThrow("already in use");
+    expect(database.insert).not.toHaveBeenCalled();
+  });
+
   it("rejects unsupported messages and nonexistent trails", async () => {
     const input = JSON.parse('{"kind":"unsupported"}');
     await expect(sendChatMessage(C, input)).rejects.toThrow("Unsupported");
-    selectResults([[]]);
-    await expect(sendChatMessage(C, { kind: "trail", trailId: B })).rejects.toThrow("no longer exists");
     expect(database.transaction).not.toHaveBeenCalled();
+    selectResults([[{ id: C, kind: "direct" }], [{ hikerId: A, accepted: true }, { hikerId: B }], []]);
+    await expect(sendChatMessage(C, { kind: "trail", trailId: B })).rejects.toThrow("no longer exists");
   });
 
   it("rejects outsiders and blocked participants before writing", async () => {
