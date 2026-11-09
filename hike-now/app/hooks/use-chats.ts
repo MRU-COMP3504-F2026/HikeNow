@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ChatMessage, ChatTab, ChatThread, Rsvp, SendChatInput, TrailShare } from "../chats/types";
+import type { ChatMessage, ChatTab, ChatThread, Rsvp, SendChatInput } from "../chats/types";
 import { createGroupConversation, getChatThreads, markChatRead, respondToProposal, sendChatMessage, startConversation, updateChatRequest } from "../actions/chats";
 import { followUser, unfollowUser } from "../actions/follows";
 import { chatName } from "../chats/utils";
@@ -9,11 +9,10 @@ import { chatName } from "../chats/utils";
 export type UseChatsOptions = {
   initialThreads: ChatThread[];
   initialThreadId?: string;
-  shareableTrails: TrailShare[];
   userId: string;
 };
 
-export function useChats({ initialThreads, initialThreadId, shareableTrails, userId }: UseChatsOptions) {
+export function useChats({ initialThreads, initialThreadId, userId }: UseChatsOptions) {
   const [threads, setThreads] = useState(initialThreads);
   const [tab, setTab] = useState<ChatTab>(
     () => initialThreads.find((thread) => thread.id === initialThreadId)?.isRequest ? "requests" : "messages",
@@ -174,11 +173,6 @@ export function useChats({ initialThreads, initialThreadId, shareableTrails, use
     });
   };
 
-  const selectedTrail = () => {
-    if (!active || !shareableTrails.length) throw new Error("No trail is available to share.");
-    return shareableTrails[active.messages.length % shareableTrails.length];
-  };
-
   const start = async (personId: string) => {
     const id = await startConversation(personId);
     await refresh();
@@ -206,7 +200,7 @@ export function useChats({ initialThreads, initialThreadId, shareableTrails, use
     threads, visibleThreads, active, tab, search, requestCount, refreshError,
     setSearch, selectTab, selectThread, toggleFollow, accept, decline, start, createGroup, rsvp,
     sendText: (text: string, messageId?: string) => send({ kind: "text", text }, messageId),
-    shareTrail: () => send({ kind: "trail", trailId: selectedTrail().id }),
-    proposeHike: () => send({ kind: "proposal", trailId: selectedTrail().id }),
+    shareTrail: (trailId: string) => send({ kind: "trail", trailId }),
+    proposeHike: (trailId: string) => send({ kind: "proposal", trailId }),
   };
 }

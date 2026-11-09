@@ -19,7 +19,6 @@ async function ChatsContent({ searchParams }: { searchParams: Promise<{ thread?:
       initialThreadId={params.thread}
       contacts={data.contacts}
       shareableTrails={data.trails}
-      mentionOptions={data.contacts.map((person) => ({ person, trail: "Following" }))}
       suggestions={[]}
       me={data.me}
     />

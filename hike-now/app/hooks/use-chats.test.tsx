@@ -15,7 +15,7 @@ vi.mock("../actions/chats", () => ({
 vi.mock("../actions/follows", () => ({ followUser: vi.fn(), unfollowUser: vi.fn() }));
 
 const initialThreads = [{ ...INITIAL_THREADS[0], unread: false }];
-const options = { initialThreads, shareableTrails: SHAREABLE_TRAILS, userId: "me" };
+const options = { initialThreads, userId: "me" };
 const saved: ChatMessage = { id: "saved", from: "me", kind: "text", text: "Do not lose this" };
 
 beforeEach(() => {
@@ -25,6 +25,18 @@ beforeEach(() => {
 });
 
 describe("chat delivery reconciliation", () => {
+  it.each(["trail", "proposal"] as const)("sends the explicitly selected hike as a %s card", async (kind) => {
+    const trail = SHAREABLE_TRAILS[2];
+    const { result } = renderHook(() => useChats(options));
+    await act(async () => {
+      if (kind === "trail") await result.current.shareTrail(trail.id);
+      else await result.current.proposeHike(trail.id);
+    });
+    expect(sendChatMessage).toHaveBeenCalledExactlyOnceWith(
+      initialThreads[0].id, { kind, trailId: trail.id }, expect.any(String),
+    );
+  });
+
   it("keeps a confirmed send when a later refresh returns an older snapshot", async () => {
     vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
     try {

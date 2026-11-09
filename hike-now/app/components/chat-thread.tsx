@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { ChatPerson, ChatThread, MentionOption, Rsvp } from "../chats/types";
+import type { ChatPerson, ChatThread, Rsvp, TrailShare } from "../chats/types";
 import { chatInitials, chatName } from "../chats/utils";
 import Avatar from "./avatar";
 import Button from "./button";
@@ -13,7 +13,7 @@ import { ChevronLeftIcon, TrailIcon } from "./icons";
 export type ChatThreadViewProps = {
   thread: ChatThread;
   me: ChatPerson;
-  mentionOptions: MentionOption[];
+  shareableTrails: TrailShare[];
   /** Solo móvil: vuelve a la lista de chats. */
   onBack: () => void;
   onToggleFollow: () => void;
@@ -23,8 +23,8 @@ export type ChatThreadViewProps = {
   onBlock?: () => void;
   onLeave?: () => void;
   onSend: (text: string, messageId: string) => Promise<boolean>;
-  onShareTrail: () => void;
-  onProposeHike: () => void;
+  onShareTrail: (trailId: string) => void;
+  onProposeHike: (trailId: string) => void;
   onRsvp: (messageId: string, value: Rsvp) => void;
 };
 
@@ -32,7 +32,7 @@ export type ChatThreadViewProps = {
 export default function ChatThreadView({
   thread,
   me,
-  mentionOptions,
+  shareableTrails,
   onBack,
   onToggleFollow,
   actionPending = false,
@@ -171,7 +171,10 @@ export default function ChatThreadView({
         <ChatComposer
           key={thread.id}
           draftStorageKey={`hike-now:chat-draft:${me.id}:${thread.id}`}
-          mentionOptions={mentionOptions}
+          mentionOptions={(thread.kind === "group" ? thread.members : [thread.person])
+            .filter((person) => person.id !== me.id)
+            .map((person) => ({ person, trail: group ? "Group member" : "Chat participant" }))}
+          shareableTrails={shareableTrails}
           onSend={onSend}
           onShareTrail={onShareTrail}
           onProposeHike={onProposeHike}

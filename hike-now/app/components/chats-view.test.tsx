@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   INITIAL_THREADS,
   ME,
-  MENTION_OPTIONS,
   SHAREABLE_TRAILS,
   SUGGESTED_HIKERS,
 } from "../chats/mock-data";
@@ -46,7 +45,7 @@ beforeEach(() => {
         id: `saved-${thread.messages.length}`, from: "me",
         ...(input.kind === "text" ? { kind: "text", text: input.text } :
           input.kind === "trail" ? { kind: "trail", trail: SHAREABLE_TRAILS.find((trail) => trail.id === input.trailId)! } :
-          { kind: "proposal", proposal: { trailName: "Trail", when: "Saturday", where: "Trailhead", going: [], rsvp: "yes" } }),
+          { kind: "proposal", proposal: { trailName: SHAREABLE_TRAILS.find((trail) => trail.id === input.trailId)!.name, when: "Saturday", where: "Trailhead", going: [], rsvp: "yes" } }),
       }],
     } : thread);
     return stored.find((thread) => thread.id === id)!.messages.at(-1);
@@ -74,7 +73,6 @@ function setup(threads: ChatThread[] = INITIAL_THREADS, options: Pick<ChatsViewP
     <ChatsView
       initialThreads={threads}
       shareableTrails={SHAREABLE_TRAILS}
-      mentionOptions={MENTION_OPTIONS}
       suggestions={SUGGESTED_HIKERS}
       me={ME}
       {...options}
@@ -470,19 +468,45 @@ describe("ChatsView", () => {
       expect(screen.getAllByText(/./).length).toBe(before);
     });
 
-    it("lets you mention people you hiked with", async () => {
-      setup();
+    it("only lets you mention the other person in a direct chat, even if not followed", async () => {
+      setup([{ ...INITIAL_THREADS[0], following: false }]);
       const input = screen.getByLabelText("Message");
 
       fireEvent.change(input, { target: { value: "Thanks @" } });
       const picker = screen.getByRole("dialog", { name: "Mention a hiking partner" });
-      fireEvent.click(within(picker).getByRole("button", { name: /Hana Sato/ }));
+      expect(within(picker).getAllByRole("button")).toHaveLength(1);
+      expect(within(picker).queryByRole("button", { name: /Hana Sato|Lucas Torres|You/ })).not.toBeInTheDocument();
+      fireEvent.click(within(picker).getByRole("button", { name: /Priya Nair/ }));
 
-      expect(input).toHaveValue("Thanks @Hana ");
+      expect(input).toHaveValue("Thanks @Priya ");
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
       fireEvent.keyDown(input, { key: "Enter" });
-      expect(await screen.findByText("@Hana")).toBeInTheDocument();
+      expect(await screen.findByText("@Priya")).toBeInTheDocument();
+    });
+
+    it("only lists other members of the current group, not followed outsiders or yourself", () => {
+      setup([groupThread()], { contacts: [INITIAL_THREADS[2].person] });
+      fireEvent.click(screen.getByRole("button", { name: "Mention a hiking partner" }));
+      const picker = screen.getByRole("dialog", { name: "Mention a hiking partner" });
+      expect(within(picker).getAllByRole("button")).toHaveLength(2);
+      expect(within(picker).getByRole("button", { name: /Priya Nair/ })).toBeInTheDocument();
+      expect(within(picker).getByRole("button", { name: /Lucas Torres/ })).toBeInTheDocument();
+      expect(within(picker).queryByRole("button", { name: /You|Hana Sato/ })).not.toBeInTheDocument();
+    });
+
+    it("updates mention choices when switching conversations", async () => {
+      setup();
+      fireEvent.click(screen.getByRole("button", { name: "Mention a hiking partner" }));
+      expect(within(screen.getByRole("dialog")).getByRole("button", { name: /Priya Nair/ })).toBeInTheDocument();
+      fireEvent.click(within(list()).getByRole("button", { name: /Lucas Torres/ }));
+      await screen.findByRole("heading", { name: "Lucas Torres" });
+      await waitFor(() => expect(screen.getByRole("button", { name: "Mention a hiking partner" })).toBeEnabled());
+      fireEvent.click(screen.getByRole("button", { name: "Mention a hiking partner" }));
+      const picker = screen.getByRole("dialog");
+      expect(within(picker).getAllByRole("button")).toHaveLength(1);
+      expect(within(picker).getByRole("button", { name: /Lucas Torres/ })).toBeInTheDocument();
+      expect(within(picker).queryByRole("button", { name: /Priya Nair/ })).not.toBeInTheDocument();
     });
 
     it("opens the mention list from the button and closes it with Escape", () => {
@@ -498,16 +522,29 @@ describe("ChatsView", () => {
       setup();
       const before = screen.getAllByRole("link", { name: /View trail/ }).length;
       fireEvent.click(screen.getByRole("button", { name: "Share a trail" }));
+      expect(sendChatMessage).not.toHaveBeenCalled();
+      const picker = screen.getByRole("dialog", { name: "Share a trail" });
+      fireEvent.change(within(picker).getByRole("searchbox"), { target: { value: "Old Fort" } });
+      fireEvent.blur(within(picker).getByRole("searchbox"), { relatedTarget: null });
+      fireEvent.click(within(picker).getByRole("button", { name: /Old Fort Point/ }));
 
       await waitFor(() => expect(screen.getAllByRole("link", { name: /View trail/ })).toHaveLength(before + 1));
+      expect(sendChatMessage).toHaveBeenCalledExactlyOnceWith("priya",
+        { kind: "trail", trailId: SHAREABLE_TRAILS[0].id }, expect.any(String));
       const links = screen.getAllByRole("link", { name: /View trail/ });
-      expect(links[0].getAttribute("href")).toMatch(/^\/reviews\//);
+      expect(links.at(-1)).toHaveAttribute("href", `/reviews/${SHAREABLE_TRAILS[0].id}`);
     });
 
     it("proposes a hike and lets you change your RSVP", async () => {
       setup();
       fireEvent.click(screen.getByRole("button", { name: "Propose a hike" }));
+      expect(sendChatMessage).not.toHaveBeenCalled();
+      fireEvent.blur(screen.getByRole("searchbox", { name: "Search hikes" }), { relatedTarget: null });
+      fireEvent.click(within(screen.getByRole("dialog", { name: "Propose a hike" })).getByRole("button", { name: /Yoho Lake/ }));
       await waitFor(() => expect(screen.getAllByText("HIKE PROPOSAL")).toHaveLength(2));
+      expect(sendChatMessage).toHaveBeenCalledExactlyOnceWith("priya",
+        { kind: "proposal", trailId: SHAREABLE_TRAILS[2].id }, expect.any(String));
+      expect(screen.getByText(SHAREABLE_TRAILS[2].name)).toBeInTheDocument();
 
       const going = screen.getAllByText("You're going");
       fireEvent.click(within(going[going.length - 1].closest("div")!.parentElement!).getByRole("button", { name: "Change" }));
@@ -581,6 +618,10 @@ describe("ChatsView", () => {
       const beforeLinks = screen.getAllByRole("link", { name: /View trail/ }).length;
       const beforeProposals = screen.getAllByText("HIKE PROPOSAL").length;
       fireEvent.click(screen.getByRole("button", { name: label }));
+      if (label !== "I'm in") {
+        expect(push).not.toHaveBeenCalled();
+        fireEvent.click(within(screen.getByRole("dialog", { name: label })).getByRole("button", { name: /Old Fort Point/ }));
+      }
       await waitFor(() => expect(push).toHaveBeenCalledWith("/login"));
       expect(screen.getAllByRole("link", { name: /View trail/ })).toHaveLength(beforeLinks);
       expect(screen.getAllByText("HIKE PROPOSAL")).toHaveLength(beforeProposals);

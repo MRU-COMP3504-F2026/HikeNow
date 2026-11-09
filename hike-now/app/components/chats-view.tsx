@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useChats } from "../hooks/use-chats";
 import { useAuthenticatedAction } from "../hooks/use-authenticated-action";
-import type { ChatPerson, ChatThread, MentionOption, TrailShare } from "../chats/types";
+import type { ChatPerson, ChatThread, TrailShare } from "../chats/types";
 import ChatEmptyState from "./chat-empty-state";
 import ChatList from "./chat-list";
 import ChatThreadView from "./chat-thread";
@@ -14,7 +14,6 @@ import Button from "./button";
 export type ChatsViewProps = {
   initialThreads: ChatThread[];
   shareableTrails: TrailShare[];
-  mentionOptions: MentionOption[];
   suggestions: { person: ChatPerson; reviewed: string }[];
   /** Usuario actual. */
   me: ChatPerson;
@@ -26,13 +25,12 @@ export type ChatsViewProps = {
 export default function ChatsView({
   initialThreads,
   shareableTrails,
-  mentionOptions,
   suggestions,
   me,
   initialThreadId,
   contacts = [],
 }: ChatsViewProps) {
-  const chats = useChats({ initialThreads, initialThreadId, shareableTrails, userId: me.id });
+  const chats = useChats({ initialThreads, initialThreadId, userId: me.id });
   const actionAuth = useAuthenticatedAction();
   // En móvil se ve la lista o la conversación, no las dos a la vez.
   const [threadOpenOnMobile, setThreadOpenOnMobile] = useState(Boolean(initialThreadId));
@@ -107,9 +105,7 @@ export default function ChatsView({
             key={active.id}
             thread={active}
             me={me}
-            mentionOptions={active.kind === "group"
-              ? active.members.filter((person) => person.id !== me.id).map((person) => ({ person, trail: "Group member" }))
-              : mentionOptions}
+            shareableTrails={shareableTrails}
             onBack={() => setThreadOpenOnMobile(false)}
             onToggleFollow={() => { void actionAuth.run(() => chats.toggleFollow(active.id)); }}
             actionPending={actionAuth.pending}
@@ -129,8 +125,8 @@ export default function ChatsView({
               setThreadOpenOnMobile(false);
             }); }}
             onSend={(text, messageId) => actionAuth.run(() => chats.sendText(text, messageId))}
-            onShareTrail={() => { void actionAuth.run(chats.shareTrail); }}
-            onProposeHike={() => { void actionAuth.run(chats.proposeHike); }}
+            onShareTrail={(trailId) => { void actionAuth.run(() => chats.shareTrail(trailId)); }}
+            onProposeHike={(trailId) => { void actionAuth.run(() => chats.proposeHike(trailId)); }}
             onRsvp={(messageId, value) => { void actionAuth.run(() => chats.rsvp(messageId, value)); }}
           />
         ) : noChats ? (

@@ -99,7 +99,7 @@ npm run db:review-photos   # Supabase Storage bucket for review photos
 | Follow hikers | Profile pages | Follow/unfollow persisted in PostgreSQL. |
 | Following feed | `/feed` | Reviews from the hikers you follow. |
 | Search | `/search` | Search hikers (by name or handle) and trails. |
-| Chats | `/chats` | Direct messages, message requests (accept / delete / block), group chats (2–14 invitees), trail shares, hike proposals with RSVPs, auto-refresh every 10 s. |
+| Chats | `/chats` | Direct messages, message requests (accept / delete / block), group chats (2–14 invitees), @ mentions limited to other participants in the current chat, floating button-anchored hike pickers with name/location search for trail shares and hike proposals with RSVPs (no page resizing), auto-refresh every 10 s. |
 | Light/dark theme | Navbar | Theme toggle. |
 
 **Demo of a full vertical slice (UI → server → database → UI):**
