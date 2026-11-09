@@ -68,8 +68,9 @@ Copy [`hike-now/.env.example`](./hike-now/.env.example) to `hike-now/.env`. `.en
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon/public key (review photo uploads). |
 
 > **Credentials for the grader:** the values for the shared team Supabase project are **not** stored in
-> this repository (it would expose the database). They are provided to the instructor as a ready-to-use
-> `.env` file with the project submission: copy it to `hike-now/.env` and skip the `cp .env.example .env` step.
+> this repository (it would expose the database). They are posted in the team's
+> [Discord server](https://discord.gg/RmHTHj5gZ9), in the **`#assets`** channel, with the three variables ready
+> to use. Copy them into `hike-now/.env` and skip the `cp .env.example .env` step.
 
 ### Database setup
 
@@ -123,6 +124,24 @@ members to an existing group chat.
 ### Bug tracking and backlog
 - Work items and bugs are tracked in [GitHub Projects](https://github.com/orgs/MRU-COMP3504-F2026/projects/4/views/1)
   and GitHub Issues. Reference the issue number in the branch name, commit or PR (`#109`).
+
+### Notable bug fixes
+Bugs are fixed on their own branch (or inside the feature branch that introduced them) and merged through a Pull Request.
+This is a list of the main fixes found in the history of `main`:
+
+| Commits | Date | Author | Fix |
+|---|---|---|---|
+| [`18a001b`](https://github.com/MRU-COMP3504-F2026/HikeNow/commit/18a001b) | 22 Oct | Osval | Fixed a typo in a column name in the database schema (`lenght` → `length`). |
+| [`bd964f3`](https://github.com/MRU-COMP3504-F2026/HikeNow/commit/bd964f3), [`6c72853`](https://github.com/MRU-COMP3504-F2026/HikeNow/commit/6c72853) | 28 Oct | Osval | Added and then corrected `generateStaticParams` on `/reviews/[id]` so the production build no longer fails. |
+| [`9282aec`](https://github.com/MRU-COMP3504-F2026/HikeNow/commit/9282aec), [`0cb5c94`](https://github.com/MRU-COMP3504-F2026/HikeNow/commit/0cb5c94) | 28-29 Oct | Osval | Fixed navbar links after the route changes and updated the navbar test accordingly. |
+| [`fb9eeeb`](https://github.com/MRU-COMP3504-F2026/HikeNow/commit/fb9eeeb) | 31 Oct | Osval | Fixed the file path used to save temporary reviews. |
+| [`e33daff`](https://github.com/MRU-COMP3504-F2026/HikeNow/commit/e33daff), [`f31a3d1`](https://github.com/MRU-COMP3504-F2026/HikeNow/commit/f31a3d1), [`0d6f39e`](https://github.com/MRU-COMP3504-F2026/HikeNow/commit/0d6f39e) | 2 Nov | Osval | Fixed type (`any`) issues and the new-review page on `/reviews/[id]`; resolved merge conflicts (`01e416d`). |
+| [`299f3a8`](https://github.com/MRU-COMP3504-F2026/HikeNow/commit/299f3a8) | 2 Nov | Jaime | Trail images were read from the `landmarks` field instead of `photo`. |
+| [`f1a94f2`](https://github.com/MRU-COMP3504-F2026/HikeNow/commit/f1a94f2) | 5 Nov | Tadhg | Typed the profile editor test fixture (`ProfileDetails`) after adding chosen names and bios. |
+| [`04ec95b`](https://github.com/MRU-COMP3504-F2026/HikeNow/commit/04ec95b) | 7 Nov | Haniya | Fixed the light/dark theme toggle failing in the test environment. |
+| [`2fcf164`](https://github.com/MRU-COMP3504-F2026/HikeNow/commit/2fcf164) | 7 Nov | Tadhg | The review form is now tied to a specific trail: `/reviews/new` redirects to `/reviews` and an unknown trail id returns 404. |
+
+From now on, commit messages and Pull Requests for fixes should say *what* was broken and reference the issue number (for example `Fix trail images using photo instead of landmarks (#NN)`).
 
 ### Continuous integration
 [`.github/workflows/ci.yml`](./.github/workflows/ci.yml) runs the `validate` job on every **push** and
