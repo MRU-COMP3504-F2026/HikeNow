@@ -140,6 +140,7 @@ This is a list of the main fixes found in the history of `main`:
 | [`f1a94f2`](https://github.com/MRU-COMP3504-F2026/HikeNow/commit/f1a94f2) | 5 Nov | Tadhg | Typed the profile editor test fixture (`ProfileDetails`) after adding chosen names and bios. |
 | [`04ec95b`](https://github.com/MRU-COMP3504-F2026/HikeNow/commit/04ec95b) | 7 Nov | Haniya | Fixed the light/dark theme toggle failing in the test environment. |
 | [`2fcf164`](https://github.com/MRU-COMP3504-F2026/HikeNow/commit/2fcf164) | 7 Nov | Tadhg | The review form is now tied to a specific trail: `/reviews/new` redirects to `/reviews` and an unknown trail id returns 404. |
+| [`737e2d7`](https://github.com/MRU-COMP3504-F2026/HikeNow/commit/737e2d7) | 9 Nov | Jaime | The review photo preview (and its remove button) was drawn on top of the navbar while scrolling because the sticky header had no `z-index`; the header now has `z-50`. |
 
 From now on, commit messages and Pull Requests for fixes should say *what* was broken and reference the issue number (for example `Fix trail images using photo instead of landmarks (#NN)`).
 
