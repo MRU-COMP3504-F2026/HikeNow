@@ -1,62 +1,155 @@
-# Communication Channel
-[Discord Server](https://discord.gg/RmHTHj5gZ9) 
+# Hike Now!
 
-# Shared Google Folder
-[Google Drive](https://drive.google.com/drive/folders/1Eg1H2vX3lAmY02DvXf1szu-1euWe6Js_?usp=sharing)
+Hike Now! is a web app where hikers discover trails, leave reviews (with tags, equipment and photos),
+follow other hikers and chat with them (direct messages, group chats and hike proposals).
 
-# Product Backlog
-[Github Projects](https://github.com/orgs/MRU-COMP3504-F2026/projects/4/views/1)
+**Stack:** Next.js 16 (App Router, React 19, TypeScript, Tailwind 4) · Server Actions · Drizzle ORM ·
+PostgreSQL on Supabase · Vitest + Testing Library · GitHub Actions.
 
-# Project Members
-- Osval Montesinos Valladares
-- Tadhg Dunlop
-- Jeremy Pacla
-- Jaime García Menéndez
-- Haniya Shareef
+## Team and project links
 
-# CI/CD 
+- [Discord Server](https://discord.gg/RmHTHj5gZ9)
+- [Shared Google Folder](https://drive.google.com/drive/folders/1Eg1H2vX3lAmY02DvXf1szu-1euWe6Js_?usp=sharing)
+- [Product Backlog (GitHub Projects)](https://github.com/orgs/MRU-COMP3504-F2026/projects/4/views/1)
+- Members: Osval Montesinos Valladares, Tadhg Dunlop, Jeremy Pacla, Jaime García Menéndez, Haniya Shareef
 
+---
 
+## Live demo
+
+The app is deployed on Vercel: **https://hike-now.vercel.app/**
+
+No installation is needed to try it. A public demo account is available for grading (no sign-up required):
+
+- **Email:** `demo@hikenow.test`
+- **Password:** `HikeNowDemo2026`
+
+The sections below explain how to build, test and run the project locally.
+
+---
+
+## Quick start
+
+The application lives in the [`hike-now/`](./hike-now) folder; every command below runs from there.
+
+**Requirements:** Node.js **22.18 or newer** (includes npm) and Git. The app needs the team's Supabase
+database (see [Environment variables](#environment-variables)).
+
+```bash
+git clone https://github.com/MRU-COMP3504-F2026/HikeNow.git
+cd HikeNow/hike-now
+
+npm ci                      # 1. install exact dependency versions
+cp .env.example .env        # 2. then edit .env with the credentials provided (Windows: copy .env.example .env)
+npm run dev                 # 3. start the app at http://localhost:3000
+```
+
+### Build, test and run
+
+| Goal | Command (from `hike-now/`) | Notes |
+|---|---|---|
+| Install dependencies | `npm ci` | Reproducible install from `package-lock.json`. |
+| Run in development | `npm run dev` | http://localhost:3000, hot reload. |
+| Lint | `npm run lint` | ESLint. Must finish with 0 errors. |
+| **Run the tests** | `npm test` | Vitest, single run. About 220 unit/component tests; needs **no** database or `.env`. |
+| Tests in watch mode | `npm run test:watch` | For development. |
+| Database integration tests (optional) | `CHAT_INTEGRATION=1 npm test -- app/actions/chats.integration.test.ts app/actions/group-chats.integration.test.ts` | Needs `.env` and the migrations applied. They create and remove their own test data. |
+| **Production build** | `npm run build` | Needs `.env` and internet access (fonts are fetched from Google Fonts). |
+| Run the production build | `npm run start` | After `npm run build`. |
+
+### Environment variables
+
+Copy [`hike-now/.env.example`](./hike-now/.env.example) to `hike-now/.env`. `.env` is git-ignored.
+
+| Variable | Purpose |
+|---|---|
+| `DATABASE_URL` | Server-only PostgreSQL connection string (Supabase). Used by Drizzle and the migration scripts. |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL (review photo uploads). |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon/public key (review photo uploads). |
+
+> **Credentials for the grader:** the values for the shared team Supabase project are **not** stored in
+> this repository (it would expose the database). They are provided to the instructor as a ready-to-use
+> `.env` file with the project submission: copy it to `hike-now/.env` and skip the `cp .env.example .env` step.
+
+### Database setup
+
+The base tables (`hiker`, `hike`, `review`, `follow`, `group`, `member`) already exist in the shared
+Supabase project and are **not** created by the migrations. On the shared project the migrations below
+are already applied, and they are safe to re-run (idempotent and transactional). Only run them against a
+new or fresh copy of the database:
+
+```bash
+npm run db:auth            # sessions, rate limiting, password hashing (needs Node 22.18+)
+npm run db:profiles        # join dates, display names
+npm run db:chats           # direct and group conversations, messages
+npm run db:review-photos   # Supabase Storage bucket for review photos
+```
+
+---
+
+## Operational features (first prototype)
+
+| Feature | Where | What works |
+|---|---|---|
+| Trail browsing | `/` | Trails are read from the `hike` table (PostgreSQL) and shown as cards. |
+| Reviews | `/reviews`, `/reviews/[id]`, `/reviews/[id]/new` | List reviews, create/edit/delete your own review for a trail, with predefined tags, equipment tags and optional photos. |
+| Sign up / Log in / Log out | `/login` | Password hashing (scrypt), HTTP-only session cookie (7 days), rate limiting. Protected pages redirect to `/login`. |
+| Profile dashboard | `/profile`, `/profile/[id]` | Join date, review history, edit display name and bio, delete account (password confirmation). |
+| Follow hikers | Profile pages | Follow/unfollow persisted in PostgreSQL. |
+| Following feed | `/feed` | Reviews from the hikers you follow. |
+| Search | `/search` | Search hikers (by name or handle) and trails. |
+| Chats | `/chats` | Direct messages, message requests (accept / delete / block), group chats (2–14 invitees), trail shares, hike proposals with RSVPs, auto-refresh every 10 s. |
+| Light/dark theme | Navbar | Theme toggle. |
+
+**Demo of a full vertical slice (UI → server → database → UI):**
+1. Open `/login`, create an account (a row is written to `hiker`; a session is stored in `hiker_session`).
+2. Open `/`, choose a trail and go to its review page, then submit a review (a row is written to `review`).
+3. Open `/profile`: the review you just created is read back from the database and listed there.
+
+Not implemented yet: distance tracking, email verification/account recovery, unblocking users, adding
+members to an existing group chat.
+
+---
+
+## Development process
+
+### Version control
+- Default branch: `main`. Work is done in short-lived branches named `feature/<ticket>-<name>`, `fix/<name>`
+  or `docs/<name>`, and merged into `main` through a **Pull Request**.
+- Commit messages: a short imperative summary that says *what* and *why*, referencing the backlog ticket
+  when there is one (e.g. `Add useFollow hook for follow button state updates (T3)`).
+  Avoid messages such as "fixed bug".
+
+### Bug tracking and backlog
+- Work items and bugs are tracked in [GitHub Projects](https://github.com/orgs/MRU-COMP3504-F2026/projects/4/views/1)
+  and GitHub Issues. Reference the issue number in the branch name, commit or PR (`#109`).
+
+### Continuous integration
+[`.github/workflows/ci.yml`](./.github/workflows/ci.yml) runs the `validate` job on every **push** and
+every **pull request**, from the `hike-now` directory, on Node.js 22:
+
+1. `npm ci`: reproducible install; fails if `package-lock.json` is out of sync.
+2. `npm run lint`
+3. `npm test`
+4. `npm run build`, using the repository secrets `DATABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL` and
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY` (Settings → Secrets and variables → Actions).
+
+Rules: no secrets in the repository (`.env*` is ignored, only `.env.example` is committed);
+the `validate` job should pass before merging; database migrations are never run automatically by CI;
+Vercel handles deployment separately.
+
+### Tests
+Tests are co-located with the code (`*.test.ts` / `*.test.tsx`) and cover server actions, hooks,
+libraries and components. Test setup cleans the JSDOM document between tests.
+
+---
+
+## Appendix: CI platform comparison
 
 | Platform | Pros for HikeNow | Cons for HikeNow |
 |---|---|---|
-| **GitHub Actions** | A natural fit if the repository is hosted on GitHub. It can run `npm ci`, `npm run lint`, and `npm run build`, and integrate with Vercel deployment and preview checks. | Workflow files and deployment configuration need maintenance. Secrets and environment-specific deployments require careful setup; it is less useful if the repository is hosted elsewhere. |
-| **GitLab CI/CD** | Repository, CI, environments, and deployment controls are integrated when using GitLab. Pipelines can run the same npm checks and manage protected deployment environments. | Less compelling if the project is hosted on GitHub. Pipeline configuration and runner setup add overhead for a starter app with only lint and build checks. |
-| **Azure Pipelines** | A strong fit for teams already using Azure DevOps or needing enterprise permissions, approvals, and deployment governance. It can build the Node.js app and deploy to Azure services. | Adds setup if there is no existing Azure DevOps environment. Since the app README recommends Vercel, Azure Pipelines may be a less direct deployment fit unless Azure is a requirement. |
+| **GitHub Actions** | Natural fit for a GitHub repository. Runs `npm ci`, lint, tests and build, and integrates with Vercel previews. | Workflow files and secrets need maintenance. |
+| **GitLab CI/CD** | Integrated repository, CI and environments. | Less compelling when the code is hosted on GitHub; extra runner setup. |
+| **Azure Pipelines** | Strong governance and approvals for Azure-centred teams. | Extra setup without an Azure DevOps environment; Vercel is the intended host. |
 
-**Recommendation:** If the repository is on GitHub and Vercel is the intended host, start with GitHub Actions for CI checks and Vercel for hosting and deployments. Store `DATABASE_URL` and Supabase credentials in encrypted platform environment secrets. Keep Drizzle migrations as a separate, controlled deployment step rather than running them on every build.
-
-The repository now includes [`.github/workflows/ci.yml`](./.github/workflows/ci.yml), which runs `npm ci`, linting, baseline unit tests, and the production build for pull requests and pushes to every branch. The application test commands are `npm test` for a single run and `npm run test:watch` during development. Vercel remains responsible for deployment after CI passes.
-
-## CI trigger events
-
-1. **Push to any branch** — validate every commit that is synchronized to GitHub.
-2. **Pull request opened** — validate a new proposed change before review.
-3. **Pull request synchronized** — rerun validation after new commits are pushed to the PR.
-4. **Pull request reopened** — rerun validation when previously closed work is reopened.
-5. **Pull request marked ready for review** — validate a draft before it becomes reviewable.
-6. **Pull request converted to draft** — retain a fresh validation result while work continues.
-7. **Merge queue group created** — validate the temporary merge-group commit when merge queues are enabled.
-8. **Manual workflow dispatch** — allow a maintainer to rerun CI from the Actions tab.
-9. **Scheduled weekly run** — detect dependency, runner, or base-image changes even when the repository is inactive.
-10. **Release published** — validate the exact source associated with a versioned release before deployment.
-11. **Reusable workflow call** — allow another repository workflow to invoke the same validation job.
-
-## Automated test rules
-
-The following rules define what CI must enforce for the current application:
-
-1. **Use the application directory** — commands run from `hike-now`, where the Next.js `package.json` and lockfile are located.
-2. **Use a reproducible install** — CI must run `npm ci`, not `npm install`, and must fail if `package-lock.json` is out of sync.
-3. **Use the declared Node.js version** — CI uses Node.js 22 consistently across workflow runs.
-4. **Run ESLint** — `npm run lint` must complete without errors before a change can merge.
-5. **Run all Vitest tests** — `npm test` must pass for the layout, navbar, and footer baseline tests.
-6. **Clean up test state** — test setup must clean the JSDOM document between tests so one component test cannot affect another.
-7. **Test navigation links** — navbar and footer tests must verify the shared Trails, Reviews, and Chats routes.
-8. **Test navigation state** — navbar tests must verify active-route styling and mobile menu open/close behavior.
-9. **Test authentication presentation** — navbar tests must verify both the signed-out Login action and signed-in user email state.
-10. **Test layout metadata** — layout tests must verify the `Hike Now` title, description, and English document language.
-11. **Build the production application** — `npm run build` must complete after linting and unit tests.
-12. **Do not commit environment secrets** — Supabase, database, and deployment values must be supplied through GitHub/Vercel secrets; `.env*` files remain ignored.
-13. **Require passing CI for protected branches** — the `validate` job should be required before merging into protected branches.
-14. **Keep deployment separate from validation** — Vercel handles deployment only after the GitHub checks pass; database migrations are not run automatically by this test workflow.
+**Decision:** GitHub Actions for CI and Vercel for hosting.
