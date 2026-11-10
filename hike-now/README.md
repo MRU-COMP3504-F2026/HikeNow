@@ -127,6 +127,22 @@ are saved server-side. Trail cards use actual database trails. Chats refreshes e
 10 seconds while the page is visible, so incoming messages appear without reloading.
 All reads and mutations require a valid session; only participants can access a chat.
 Failed actions display an error and failed message saves retain the draft.
+Confirmed outgoing messages are reconciled by ID rather than discarded by older
+refresh responses or server-rendered snapshots. Failed delivery requests retry
+twice with the same message ID, so a response lost after a database commit cannot
+create a duplicate. Text drafts and their delivery IDs are saved in this browser,
+separately for each account and conversation, and restored when reopening a chat.
+They are removed only after the server acknowledges delivery. After a sustained
+outage, the error remains visible and attempted text messages retry every ten
+seconds while their chat is open and visible, and immediately on reconnecting.
+Reopening the chat restores the pending attempt and resumes retries; unsent text
+that was never submitted is not sent automatically. Editing a pending draft
+stops its automatic retries and starts a new draft. Delivery still requires a
+valid session, connectivity, and an unblocked conversation; an unsent draft is
+never presented as a delivered message.
+Drafts contain message text in browser local storage, so use a trusted browser
+and clear site data to remove retained drafts from a shared device.
+Returning to the page or reconnecting also refreshes incoming messages immediately.
 
 Run the optional PostgreSQL integration tests with `CHAT_INTEGRATION=1 npm test --
 app/actions/chats.integration.test.ts app/actions/group-chats.integration.test.ts`
