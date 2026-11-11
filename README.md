@@ -70,7 +70,8 @@ Copy [`hike-now/.env.example`](./hike-now/.env.example) to `hike-now/.env`. `.en
 > **Credentials for the grader:** the values for the shared team Supabase project are **not** stored in
 > this repository (it would expose the database). They are posted in the team's
 > [Discord server](https://discord.gg/RmHTHj5gZ9), in the **`#assets`** channel, with the three variables ready
-> to use. Copy them into `hike-now/.env` and skip the `cp .env.example .env` step.
+> to use. If you can't find them, check the **pinned messages** of that channel. Copy them into `hike-now/.env`
+> and skip the `cp .env.example .env` step.
 
 ### Database setup
 
