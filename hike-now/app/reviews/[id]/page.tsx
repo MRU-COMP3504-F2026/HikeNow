@@ -23,7 +23,20 @@ type ReviewUI = {
   author: string;
   authorHref?: string;
   photoUrl?: string;
+  hikeDate?: string;
+  createdAt?: string;
 };
+
+function formatHikeDate(date: string) {
+  const [year, month, day] = date.split("-").map(Number);
+
+  return new Date(Date.UTC(year, month - 1, day)).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
 
 interface PageProps {
   params: Promise<{ id: string }> | { id: string };
@@ -107,7 +120,7 @@ function ReviewCard({ review }: { review: ReviewUI }) {
   return (
     <article className="rounded-control border border-border bg-background p-4 shadow-control">
       <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-        {/* Left side */}
+        {/* Review details */}
         <div className="min-w-0 flex-1">
           <div className="mb-3 flex flex-wrap items-center gap-3">
             <StarRating value={review.rating} />
@@ -125,25 +138,53 @@ function ReviewCard({ review }: { review: ReviewUI }) {
             {review.title}
           </h2>
 
+          {/* Date the hike took place */}
+          {review.hikeDate && (
+            <p className="mb-2 text-small font-medium text-text-subtle">
+              Hiked on{" "}
+              <time dateTime={review.hikeDate}>
+                {formatHikeDate(review.hikeDate)}
+              </time>
+            </p>
+          )}
+
           <p className="mb-5 max-w-2xl text-small leading-5 text-text">
             {review.comment}
           </p>
 
+          {/* Review author and submission date */}
           <div className="flex items-center gap-2">
             <span className="grid size-7 place-items-center rounded-full bg-primary text-on-primary">
               <UserIcon size={15} />
             </span>
 
-            <div>
+            <div className="flex flex-col">
               <p className="text-small font-medium capitalize text-text">
                 {review.authorHref ? (
-                  <Link href={review.authorHref} className="hover:text-primary hover:underline">
+                  <Link
+                    href={review.authorHref}
+                    className="hover:text-primary hover:underline"
+                  >
                     {review.author}
                   </Link>
                 ) : (
                   review.author
                 )}
               </p>
+
+              {review.createdAt && (
+                <p className="text-[10px] text-text-subtle">
+                  Review posted{" "}
+                  <time dateTime={review.createdAt}>
+                    {new Date(review.createdAt).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                      timeZone: "UTC",
+                    })}
+                  </time>
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -213,23 +254,51 @@ async function ReviewsContent({ params }: PageProps) {
     bad: "bad",
   };
 
-  const formattedReviews: ReviewUI[] = reviewsData
-    .filter((r) => r.hikeId === currentHike.id)
-    .map((r) => {
-      const hiker = hikersData.find((h) => h.id === r.hikerId);
+const formattedReviews: ReviewUI[] = reviewsData
+  .filter((r) => r.hikeId === currentHike.id)
+  .sort((a, b) => {
+    if (a.hikeDate && b.hikeDate) {
+      const dateCompare = b.hikeDate.localeCompare(a.hikeDate);
 
-      return {
-        id: r.id,
-        rating: Math.round(Number(r.rating ?? 0)),
-        condition: conditionMap[r.condition ?? ""] || "good",
-        tags: r.tags ? r.tags.split(", ").map((t) => t.trim()) : [],
-        title: r.title ?? "Untitled Review",
-        comment: r.comments ?? "",
-        author: hiker ? hiker.displayName?.trim() || hiker.email.split("@")[0] : "Anonymous Hiker",
-        authorHref: hiker ? profileHref(hiker.id) : undefined,
-        photoUrl: r.photo ?? undefined,
-      };
-    });
+      if (dateCompare !== 0) {
+        return dateCompare;
+      }
+    }
+
+    if (a.hikeDate && !b.hikeDate) {
+      return -1;
+    }
+
+    if (!a.hikeDate && b.hikeDate) {
+      return 1;
+    }
+
+    const aCreated = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const bCreated = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+
+    return bCreated - aCreated;
+  })
+  .map((r) => {
+    const hiker = hikersData.find((h) => h.id === r.hikerId);
+
+    return {
+      id: r.id,
+      rating: Math.round(Number(r.rating ?? 0)),
+      condition: conditionMap[r.condition ?? ""] || "good",
+      tags: r.tags
+        ? r.tags.split(", ").map((tag) => tag.trim()).filter(Boolean)
+        : [],
+      title: r.title ?? "Untitled Review",
+      comment: r.comments ?? "",
+      author: hiker
+        ? hiker.displayName?.trim() || hiker.email.split("@")[0]
+        : "Anonymous Hiker",
+      authorHref: hiker ? profileHref(hiker.id) : undefined,
+      photoUrl: r.photo ?? undefined,
+      hikeDate: r.hikeDate ?? undefined,
+      createdAt: r.createdAt ?? undefined,
+    };
+  });
 
   const topTags = getTopTags(formattedReviews);
 

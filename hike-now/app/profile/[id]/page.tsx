@@ -85,25 +85,53 @@ async function ProfileContent({ params }: PageProps) {
   const displayName = hikerName(hiker.email, hiker.displayName);
 
   // Filter reviews written by this hiker
-  const reviews = reviewsData
-    .filter((r) => r.hikerId === hiker.id)
-    .sort((a, b) => (b.createdAt ? Date.parse(b.createdAt) : 0) - (a.createdAt ? Date.parse(a.createdAt) : 0))
-    .map((r) => {
-      const hike = hikesData.find((h) => h.id === r.hikeId);
-      return {
-        id: r.id,
-        rating: Math.round(Number(r.rating ?? 0)),
-        condition: conditionMap[r.condition ?? ""] ?? "good",
-        tags: r.tags ? r.tags.split(", ").map((t) => t.trim()) : [],
-        title: r.title ?? "Untitled Review",
-        comments: r.comments ?? "",
-        photo: r.photo ?? null,
-        trailName: hike?.name ?? "Unknown trail",
-        trailHref: hike ? `/reviews/${hike.id}` : undefined,
-        hikeId: r.hikeId,
-        createdAt: r.createdAt,
-      };
-    });
+const reviews = reviewsData
+  .filter((review) => review.hikerId === hiker.id)
+  .sort((a, b) => {
+    // Reviews with a hike date appear before older reviews that do not have one.
+    if (a.hikeDate && b.hikeDate) {
+      const dateCompare = b.hikeDate.localeCompare(a.hikeDate);
+
+      if (dateCompare !== 0) {
+        return dateCompare;
+      }
+    }
+
+    if (a.hikeDate && !b.hikeDate) {
+      return -1;
+    }
+
+    if (!a.hikeDate && b.hikeDate) {
+      return 1;
+    }
+
+    // Use the review submission date as a fallback.
+    const aCreated = a.createdAt ? Date.parse(a.createdAt) : 0;
+    const bCreated = b.createdAt ? Date.parse(b.createdAt) : 0;
+
+    return bCreated - aCreated;
+  })
+  .map((review) => {
+    const hike = hikesData.find((hike) => hike.id === review.hikeId);
+
+    return {
+      id: review.id,
+      rating: Math.round(Number(review.rating ?? 0)),
+      condition: conditionMap[review.condition ?? ""] ?? "good",
+      tags: review.tags
+        ? review.tags.split(", ").map((tag) => tag.trim()).filter(Boolean)
+        : [],
+      title: review.title ?? "Untitled Review",
+      comments: review.comments ?? "",
+      photo: review.photo ?? null,
+      trailName: hike?.name ?? "Unknown trail",
+      trailHref: hike ? `/reviews/${hike.id}` : undefined,
+      hikeId: review.hikeId,
+      hikeDate: review.hikeDate ?? null,
+      createdAt: review.createdAt,
+    };
+  });
+
 
   const trailsReviewed = new Set(reviews.map((r) => r.hikeId)).size;
 
@@ -150,7 +178,8 @@ async function ProfileContent({ params }: PageProps) {
           {reviews.length > 0 ? (
             reviews.map((r) => (
               <div key={r.id}>
-                {r.createdAt && <p className="mb-2 text-small text-text-subtle">Reviewed on <time dateTime={r.createdAt}>{new Date(r.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" })}</time></p>}
+
+
                 <ReviewCard
                   rating={r.rating}
                   condition={r.condition}
@@ -159,6 +188,8 @@ async function ProfileContent({ params }: PageProps) {
                   comments={r.comments}
                   trailName={r.trailName}
                   trailHref={r.trailHref}
+                  hikeDate={r.hikeDate ?? undefined}
+                  date={r.createdAt ?? undefined}
                   photos={r.photo ? [r.photo] : []}
                 />
               </div>

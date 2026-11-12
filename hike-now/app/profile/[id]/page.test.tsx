@@ -61,22 +61,50 @@ beforeEach(() => {
   mocks.getCurrentUser.mockResolvedValue({ id: hiker.id, email: hiker.email });
   mocks.getHikes.mockResolvedValue([{ id: "trail-id", name: "Mountain Trail" }]);
   mocks.getReviews.mockResolvedValue([
-    {
-      id: "older-review", hikerId: hiker.id, hikeId: "trail-id",
-      createdAt: "2025-02-01T00:00:00.000Z", title: "Older review",
-      rating: "4", condition: "good", tags: "", comments: "",
-    },
-    {
-      id: "newer-review", hikerId: hiker.id, hikeId: "trail-id",
-      createdAt: "2025-03-01T00:00:00.000Z", title: "Newer review",
-      rating: "5", condition: "mild", tags: "", comments: "",
-    },
-    {
-      id: "other-review", hikerId: "another-hiker", hikeId: "trail-id",
-      createdAt: "2025-04-01T00:00:00.000Z", title: "Different author review",
-      rating: "3", condition: "bad", tags: "", comments: "",
-    },
-  ]);
+  {
+    id: "older-review",
+    hikerId: hiker.id,
+    hikeId: "trail-id",
+
+    // Submitted later, but the hike itself happened earlier.
+    createdAt: "2025-04-01T00:00:00.000Z",
+    hikeDate: "2025-02-01",
+
+    title: "Older review",
+    rating: "4",
+    condition: "good",
+    tags: "",
+    comments: "",
+  },
+  {
+    id: "newer-review",
+    hikerId: hiker.id,
+    hikeId: "trail-id",
+
+    // Submitted earlier, but the hike itself happened later.
+    createdAt: "2025-01-01T00:00:00.000Z",
+    hikeDate: "2025-03-01",
+
+    title: "Newer review",
+    rating: "5",
+    condition: "mild",
+    tags: "",
+    comments: "",
+  },
+  {
+    id: "other-review",
+    hikerId: "another-hiker",
+    hikeId: "trail-id",
+    createdAt: "2025-04-01T00:00:00.000Z",
+    hikeDate: "2025-04-01",
+
+    title: "Different author review",
+    rating: "3",
+    condition: "bad",
+    tags: "",
+    comments: "",
+  },
+]);
   mocks.getFollowers.mockResolvedValue([{ id: "follower-1" }, { id: "follower-2" }]);
   mocks.getFollowing.mockResolvedValue([{ id: "following-1" }]);
   mocks.notFound.mockImplementation(() => { throw new Error("NEXT_NOT_FOUND"); });
@@ -93,8 +121,8 @@ describe("profile page", () => {
     expect(mocks.getFollowing).toHaveBeenCalledWith("hiker-id");
     expect(html).toContain("Your dashboard");
     expect(html).toContain("January 2, 2024");
-    expect(html).toContain("March 1, 2025");
-    expect(html).toContain("February 1, 2025");
+    expect(html).toContain("Mar 1, 2025");
+    expect(html).toContain("Feb 1, 2025");
     expect(html).toMatch(/Reviews<\/dt><dd[^>]*>2<\/dd>/);
     expect(html).toMatch(/Trails reviewed<\/dt><dd[^>]*>1<\/dd>/);
     expect(html).toMatch(/Followers<\/dt><dd[^>]*>2<\/dd>/);

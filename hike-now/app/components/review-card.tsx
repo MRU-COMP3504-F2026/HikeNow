@@ -29,6 +29,8 @@ export type ReviewCardProps = {
   avatarUrl?: string;
   /** Fecha de la review. Si falta no se muestra. */
   date?: Date | string;
+  /** Date the hike actually took place. */
+  hikeDate?: Date | string;
   /** Fotos de la review (se muestran hasta 2). */
   photos?: string[];
   className?: string;
@@ -60,6 +62,7 @@ export default function ReviewCard({
   trailName,
   trailHref,
   avatarUrl,
+  hikeDate,
   date,
   photos = [],
   className = "",
@@ -109,6 +112,14 @@ export default function ReviewCard({
             <span className="text-small font-medium text-primary">{trailName}</span>
           ))}
         {title && <h3 className="text-nav font-medium text-ink">{title}</h3>}
+        {hikeDate && (
+          <p className="text-small font-medium text-text-subtle">
+            Hiked on{" "}
+            <time dateTime={new Date(hikeDate).toISOString()}>
+              {formatDate(hikeDate)}
+            </time>
+          </p>
+        )}
         {comments && <p className="text-small text-text">{comments}</p>}
 
         {(author || date) && (

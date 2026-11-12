@@ -15,10 +15,20 @@ import {
 // 1. SELECT ALL REVIEWS (Cached for prerendering)
 export const getReviews = unstable_cache(
   async () => {
-    const rows = await db.select().from(review).orderBy(sql`${review.createdAt} desc nulls last`);
-    return rows.map((row) => ({ ...row, createdAt: row.createdAt?.toISOString() ?? null }));
+    const rows = await db
+      .select()
+      .from(review)
+      .orderBy(
+        sql`${review.hikeDate} desc nulls last`,
+        sql`${review.createdAt} desc nulls last`
+      );
+
+    return rows.map((row) => ({
+      ...row,
+      createdAt: row.createdAt?.toISOString() ?? null,
+    }));
   },
-  ["all-reviews-v3"],
+  ["all-reviews-v4"],
   { tags: ["reviews"] }
 );
 
@@ -26,10 +36,21 @@ export const getReviews = unstable_cache(
 export async function getReviewById(id: string) {
   return unstable_cache(
     async () => {
-      const [data] = await db.select().from(review).where(eq(review.id, id));
-      return data ? { ...data, createdAt: data.createdAt?.toISOString() ?? null } : null;
+      const [data] = await db
+        .select()
+        .from(review)
+        .where(eq(review.id, id));
+
+      if (!data) {
+        return null;
+      }
+
+      return {
+        ...data,
+        createdAt: data.createdAt?.toISOString() ?? null,
+      };
     },
-    [`review-v3-${id}`],
+    [`review-v4-${id}`],
     { tags: ["reviews", `review-${id}`] }
   )();
 }
@@ -168,18 +189,87 @@ async function readReviewPhoto(formData: FormData, hikerId: string) {
 function readReviewFields(formData: FormData) {
   function text(name: string, max: number) {
     const value = formData.get(name);
+
     if (typeof value !== "string" || value.length > max) {
-      throw new ReviewValidationError(`Invalid ${name}; maximum length is ${max} characters.`);
+      throw new ReviewValidationError(
+        `Invalid ${name}; maximum length is ${max} characters.`
+      );
     }
+
     return value.trim();
   }
+
   const title = text("title", 255);
   const rating = text("rating", 4);
   const condition = text("condition", 255);
-  if (!title) throw new ReviewValidationError("Please enter a title for your review.");
-  if (!/^[1-5]$/.test(rating)) throw new ReviewValidationError("Please rate the trail from 1 to 5.");
-  if (!["good", "mild", "bad"].includes(condition)) {
-    throw new ReviewValidationError("Please specify the trail condition.");
+  const tags = text("tags", 255);
+  const comments = text("comments", 500);
+  const hikeDate = text("hikeDate", 10);
+
+  if (!title) {
+    throw new ReviewValidationError(
+      "Please enter a title for your review."
+    );
   }
-  return { title, rating, condition, tags: text("tags", 255), comments: text("comments", 500) };
+
+  if (!/^[1-5]$/.test(rating)) {
+    throw new ReviewValidationError(
+      "Please rate the trail from 1 to 5."
+    );
+  }
+
+  if (!["good", "mild", "bad"].includes(condition)) {
+    throw new ReviewValidationError(
+      "Please specify the trail condition."
+    );
+  }
+
+  if (!hikeDate) {
+    throw new ReviewValidationError(
+      "Please select the date you completed this hike."
+    );
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(hikeDate)) {
+    throw new ReviewValidationError(
+      "Please enter a valid hike date."
+    );
+  }
+
+  const [year, month, day] = hikeDate.split("-").map(Number);
+
+  const parsedDate = new Date(Date.UTC(year, month - 1, day));
+
+  const isValidDate =
+    parsedDate.getUTCFullYear() === year &&
+    parsedDate.getUTCMonth() === month - 1 &&
+    parsedDate.getUTCDate() === day;
+
+  if (!isValidDate) {
+    throw new ReviewValidationError(
+      "Please enter a valid hike date."
+    );
+  }
+
+  const today = new Date();
+  const todayString = [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, "0"),
+    String(today.getDate()).padStart(2, "0"),
+  ].join("-");
+
+  if (hikeDate > todayString) {
+    throw new ReviewValidationError(
+      "The hike date cannot be in the future."
+    );
+  }
+
+  return {
+    title,
+    rating,
+    condition,
+    tags,
+    comments,
+    hikeDate,
+  };
 }

@@ -19,11 +19,20 @@ import { createReview, createReviewPhotoUpload, updateReview, deleteReview, getR
 
 function form() {
   const data = new FormData();
+
   Object.entries({
     hikeId: "11111111-1111-4111-8111-111111111111",
-    hikerId: "forged-author", title: "Great hike", rating: "5", condition: "good",
-    tags: "Clear", comments: "Loved the views.",
-  }).forEach(([key, value]) => data.set(key, value));
+    hikerId: "forged-author",
+    title: "Great hike",
+    rating: "5",
+    condition: "good",
+    tags: "Clear",
+    comments: "Loved the views.",
+    hikeDate: "2025-06-15",
+  }).forEach(([key, value]) => {
+    data.set(key, value);
+  });
+
   return data;
 }
 
@@ -39,13 +48,47 @@ beforeEach(() => {
 });
 
 describe("review ownership", () => {
-  it("uses the session owner, ignores a forged author, and refreshes profile history", async () => {
-    expect(await createReview(form())).toHaveProperty("success", true);
-    expect(mocks.values).toHaveBeenCalledWith(expect.objectContaining({ hikerId: "session-author" }));
-    expect(mocks.createClient).not.toHaveBeenCalled();
-    expect(mocks.revalidatePath).toHaveBeenCalledWith("/profile/session-author");
-    expect(mocks.revalidateTag).toHaveBeenCalledWith("reviews", { expire: 0 });
+  it("uses the session owner, stores the hike date, ignores a forged author, and refreshes profile history", async () => {
+  expect(await createReview(form())).toHaveProperty("success", true);
+
+  expect(mocks.values).toHaveBeenCalledWith(
+    expect.objectContaining({
+      hikerId: "session-author",
+      hikeDate: "2025-06-15",
+    }),
+  );
+
+  expect(mocks.createClient).not.toHaveBeenCalled();
+  expect(mocks.revalidatePath).toHaveBeenCalledWith(
+    "/profile/session-author",
+  );
+  expect(mocks.revalidateTag).toHaveBeenCalledWith("reviews", {
+    expire: 0,
   });
+
+
+});
+
+it("rejects missing, malformed, impossible, and future hike dates", async () => {
+  const missing = form();
+  missing.delete("hikeDate");
+
+  const malformed = form();
+  malformed.set("hikeDate", "June 15, 2025");
+
+  const impossible = form();
+  impossible.set("hikeDate", "2025-02-31");
+
+  const future = form();
+  future.set("hikeDate", "2099-01-01");
+
+  expect(await createReview(missing)).toHaveProperty("success", false);
+  expect(await createReview(malformed)).toHaveProperty("success", false);
+  expect(await createReview(impossible)).toHaveProperty("success", false);
+  expect(await createReview(future)).toHaveProperty("success", false);
+
+  expect(mocks.insert).not.toHaveBeenCalled();
+});
 
   it("returns ISO review dates consistently before and after cache serialization", async () => {
     const rows = [
