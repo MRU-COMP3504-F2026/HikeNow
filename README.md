@@ -70,7 +70,8 @@ Copy [`hike-now/.env.example`](./hike-now/.env.example) to `hike-now/.env`. `.en
 > **Credentials for the grader:** the values for the shared team Supabase project are **not** stored in
 > this repository (it would expose the database). They are posted in the team's
 > [Discord server](https://discord.gg/RmHTHj5gZ9), in the **`#assets`** channel, with the three variables ready
-> to use. Copy them into `hike-now/.env` and skip the `cp .env.example .env` step.
+> to use. If you can't find them, check the **pinned messages** of that channel. Copy them into `hike-now/.env`
+> and skip the `cp .env.example .env` step.
 
 ### Database setup
 
@@ -99,7 +100,7 @@ npm run db:review-photos   # Supabase Storage bucket for review photos
 | Follow hikers | Profile pages | Follow/unfollow persisted in PostgreSQL. |
 | Following feed | `/feed` | Reviews from the hikers you follow. |
 | Search | `/search` | Search hikers (by name or handle) and trails. |
-| Chats | `/chats` | Direct messages, message requests (accept / delete / block), group chats (2–14 invitees), trail shares, hike proposals with RSVPs, auto-refresh every 10 s. |
+| Chats | `/chats` | Direct messages, message requests (accept / delete / block), group chats (2–14 invitees), @ mentions limited to other participants in the current chat, floating button-anchored hike pickers with name/location search for trail shares and hike proposals with RSVPs (no page resizing), auto-refresh every 10 s. |
 | Light/dark theme | Navbar | Theme toggle. |
 
 **Demo of a full vertical slice (UI → server → database → UI):**
@@ -141,6 +142,7 @@ This is a list of the main fixes found in the history of `main`:
 | [`04ec95b`](https://github.com/MRU-COMP3504-F2026/HikeNow/commit/04ec95b) | 7 Nov | Haniya | Fixed the light/dark theme toggle failing in the test environment. |
 | [`2fcf164`](https://github.com/MRU-COMP3504-F2026/HikeNow/commit/2fcf164) | 7 Nov | Tadhg | The review form is now tied to a specific trail: `/reviews/new` redirects to `/reviews` and an unknown trail id returns 404. |
 | [`737e2d7`](https://github.com/MRU-COMP3504-F2026/HikeNow/commit/737e2d7) | 9 Nov | Jaime | The review photo preview (and its remove button) was drawn on top of the navbar while scrolling because the sticky header had no `z-index`; the header now has `z-50`. |
+| — | 9 Nov | Tadhg | Fixed a flaky profile-save error test by waiting for the async save to finish before retrying; verifies the name and bio remain intact after a failed save. |
 
 From now on, commit messages and Pull Requests for fixes should say *what* was broken and reference the issue number (for example `Fix trail images using photo instead of landmarks (#NN)`).
 

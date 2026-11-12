@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 
 export type DropdownOption<T extends string = string> = {
   /** Valor que se devuelve en onChange. */
@@ -23,6 +23,9 @@ export type DropdownProps<T extends string = string> = {
   /** Nombre accesible del desplegable. */
   label?: string;
   className?: string;
+  triggerContent?: ReactNode;
+  triggerClassName?: string;
+  listClassName?: string;
 };
 
 /**
@@ -38,6 +41,9 @@ export default function Dropdown<T extends string = string>({
   placeholder = "Select an option",
   label = "Options",
   className = "",
+  triggerContent,
+  triggerClassName,
+  listClassName = "",
 }: DropdownProps<T>) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -129,27 +135,32 @@ export default function Dropdown<T extends string = string>({
         aria-controls={listId}
         onClick={() => (open ? setOpen(false) : openList())}
         className={[
-          "flex w-full cursor-pointer items-center justify-between gap-2 rounded-control border border-border bg-background px-3 py-2 text-left text-small text-text shadow-control",
+          triggerClassName ??
+            "flex w-full cursor-pointer items-center justify-between gap-2 rounded-control border border-border bg-background px-3 py-2 text-left text-small text-text shadow-control",
           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
         ].join(" ")}
       >
-        <span className={selected ? "" : "text-placeholder"}>
-          {selected ? selected.label : placeholder}
-        </span>
-        <svg
-          width={12}
-          height={12}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-          className={open ? "rotate-180 transition-transform" : "transition-transform"}
-        >
-          <path d="m6 9 6 6 6-6" />
-        </svg>
+        {triggerContent ?? (
+          <>
+            <span className={selected ? "" : "text-placeholder"}>
+              {selected ? selected.label : placeholder}
+            </span>
+            <svg
+              width={12}
+              height={12}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+              className={open ? "rotate-180 transition-transform" : "transition-transform"}
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </>
+        )}
       </button>
 
       {open && (
@@ -158,7 +169,10 @@ export default function Dropdown<T extends string = string>({
           role="listbox"
           aria-label={label}
           aria-activedescendant={`${listId}-${activeIndex}`}
-          className="absolute top-full left-0 z-10 mt-1 flex w-full flex-col gap-2 rounded-control bg-primary p-3 text-on-primary shadow-control"
+          className={[
+            "absolute top-full left-0 z-10 mt-1 flex w-full flex-col gap-2 rounded-control bg-primary p-3 text-on-primary shadow-control",
+            listClassName,
+          ].join(" ")}
         >
           {options.map((option, i) => {
             const isSelected = option.value === value;

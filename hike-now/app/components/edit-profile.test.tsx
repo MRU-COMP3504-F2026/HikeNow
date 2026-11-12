@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, expect, it, vi } from "vitest";
 import EditProfile from "./edit-profile";
 import type { ProfileDetails } from "@/app/lib/profile";
@@ -49,9 +49,16 @@ it("keeps edits open and shows server or network errors", async () => {
   renderEditor();
   fireEvent.click(screen.getByRole("button", { name: "Save profile" }));
   expect(await screen.findByRole("alert")).toHaveTextContent("Bios must be at most 500 characters.");
-  expect(screen.getByLabelText("Name")).toBeInTheDocument();
+  await waitFor(() => {
+    expect(screen.getByRole("button", { name: "Save profile" })).toBeEnabled();
+    expect(screen.getByLabelText("Name")).toBeEnabled();
+  });
+  expect(screen.getByLabelText("Name")).toHaveValue("Alex Summit");
+  expect(screen.getByLabelText("Bio")).toHaveValue("I like ridges.");
 
   fireEvent.click(screen.getByRole("button", { name: "Save profile" }));
   expect(await screen.findByText("Could not save your profile. Please try again later.")).toBeInTheDocument();
+  await waitFor(() => expect(screen.getByRole("button", { name: "Save profile" })).toBeEnabled());
+  expect(updateProfile).toHaveBeenCalledTimes(2);
   expect(refresh).not.toHaveBeenCalled();
 });

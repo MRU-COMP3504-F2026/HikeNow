@@ -14,11 +14,11 @@ async function ChatsContent({ searchParams }: { searchParams: Promise<{ thread?:
 
   return (
     <ChatsView
+      key={data.me.id}
       initialThreads={data.threads}
       initialThreadId={params.thread}
       contacts={data.contacts}
       shareableTrails={data.trails}
-      mentionOptions={data.contacts.map((person) => ({ person, trail: "Following" }))}
       suggestions={[]}
       me={data.me}
     />

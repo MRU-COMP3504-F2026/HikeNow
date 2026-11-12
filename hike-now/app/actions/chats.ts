@@ -220,35 +220,59 @@ export async function createGroupConversation(name: string, inviteeIds: string[]
   });
 }
 
-export async function sendChatMessage(id: string, input: SendChatInput): Promise<ChatMessage> {
+export async function sendChatMessage(id: string, input: SendChatInput, messageId?: string): Promise<ChatMessage> {
   const user = await requireUser();
+  requireId(id);
+  id = id.toLowerCase();
+  if (messageId !== undefined) {
+    requireId(messageId);
+    messageId = messageId.toLowerCase();
+  }
   if (!input || typeof input !== "object") throw new Error("Invalid message.");
-  let content: ChatContent;
   if (input.kind === "text") {
     if (typeof input.text !== "string" || !input.text.trim() || input.text.trim().length > 4000) {
       throw new Error("Messages must contain between 1 and 4000 characters.");
     }
-    content = { kind: "text", text: input.text.trim() };
   } else if (input.kind === "trail" || input.kind === "proposal") {
     requireId(input.trailId);
-    const [trail] = await db.select().from(hike).where(eq(hike.id, input.trailId));
-    if (!trail) throw new Error("This trail no longer exists.");
-    content = input.kind === "trail" ? { kind: "trail", trail: trailShare(trail) } : {
-      kind: "proposal", proposal: {
-        trailName: trail.name, when: nextSaturdayLabel(), where: `${trail.name} trailhead`,
-        going: [], rsvp: "none",
-      },
-    };
   } else {
     throw new Error("Unsupported message type.");
   }
   return await db.transaction(async (tx) => {
     const { room, own, members } = await membersFor(tx, id, user.id);
     if (!await mayReply(tx, room, own, members)) throw new Error("Accept this request before replying.");
+    if (messageId) {
+      const [existing] = await tx.select().from(chatMessage).where(eq(chatMessage.id, messageId));
+      if (existing) {
+        if (existing.conversationId !== id || existing.senderId !== user.id) {
+          throw new Error("This message ID is already in use.");
+        }
+        const sender = chatPerson(user);
+        return existing.content.kind === "proposal"
+          ? { id: existing.id, from: "me", sender, kind: "proposal", proposal: {
+            ...existing.content.proposal, rsvp: existing.responses[user.id] ?? "none",
+          } }
+          : { ...existing.content, id: existing.id, from: "me", sender };
+      }
+    }
+    let content: ChatContent;
+    if (input.kind === "text") {
+      content = { kind: "text", text: input.text.trim() };
+    } else {
+      const [trail] = await tx.select().from(hike).where(eq(hike.id, input.trailId));
+      if (!trail) throw new Error("This trail no longer exists.");
+      content = input.kind === "trail" ? { kind: "trail", trail: trailShare(trail) } : {
+        kind: "proposal", proposal: {
+          trailName: trail.name, when: nextSaturdayLabel(), where: `${trail.name} trailhead`,
+          going: [], rsvp: "none",
+        },
+      };
+    }
     const [saved] = await tx.insert(chatMessage).values({
-      conversationId: id, senderId: user.id, content,
+      id: messageId, conversationId: id, senderId: user.id, content,
       responses: content.kind === "proposal" ? { [user.id]: "yes" } : {},
-    }).returning();
+    }).onConflictDoNothing({ target: chatMessage.id }).returning();
+    if (!saved) throw new Error("This message ID is already in use.");
     await tx.update(conversationMember).set({ hidden: false })
       .where(and(eq(conversationMember.conversationId, id), eq(conversationMember.blocked, false)));
     await tx.update(conversationMember).set({ accepted: true, readAt: new Date() }).where(memberWhere(id, user.id));

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ChatTab, ChatThread, Rsvp, SendChatInput, TrailShare } from "../chats/types";
+import type { ChatMessage, ChatTab, ChatThread, Rsvp, SendChatInput } from "../chats/types";
 import { createGroupConversation, getChatThreads, markChatRead, respondToProposal, sendChatMessage, startConversation, updateChatRequest } from "../actions/chats";
 import { followUser, unfollowUser } from "../actions/follows";
 import { chatName } from "../chats/utils";
@@ -9,11 +9,10 @@ import { chatName } from "../chats/utils";
 export type UseChatsOptions = {
   initialThreads: ChatThread[];
   initialThreadId?: string;
-  shareableTrails: TrailShare[];
   userId: string;
 };
 
-export function useChats({ initialThreads, initialThreadId, shareableTrails, userId }: UseChatsOptions) {
+export function useChats({ initialThreads, initialThreadId, userId }: UseChatsOptions) {
   const [threads, setThreads] = useState(initialThreads);
   const [tab, setTab] = useState<ChatTab>(
     () => initialThreads.find((thread) => thread.id === initialThreadId)?.isRequest ? "requests" : "messages",
@@ -24,25 +23,37 @@ export function useChats({ initialThreads, initialThreadId, shareableTrails, use
   );
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const refreshVersion = useRef(0);
+  const confirmedMessages = useRef(new Map<string, ChatMessage[]>());
+  const reconcile = useCallback((next: ChatThread[], previous: ChatThread[]) => {
+    const merged = next.map((thread) => {
+      const confirmed = confirmedMessages.current.get(thread.id) ?? [];
+      const missing = confirmed.filter((saved) => !thread.messages.some((message) => message.id === saved.id));
+      return missing.length ? {
+        ...thread, isRequest: false, time: "now", messages: [...thread.messages, ...missing],
+      } : thread;
+    });
+    return [...merged, ...previous.filter((thread) =>
+      confirmedMessages.current.has(thread.id) && !next.some((item) => item.id === thread.id))];
+  }, []);
   const [previousInitial, setPreviousInitial] = useState(initialThreads);
   if (initialThreads !== previousInitial) {
     setPreviousInitial(initialThreads);
-    setThreads(initialThreads);
+    setThreads((previous) => reconcile(initialThreads, previous));
   }
 
   const refresh = useCallback(async () => {
     const version = ++refreshVersion.current;
     const next = await getChatThreads();
     if (version === refreshVersion.current) {
-      setThreads(next);
+      setThreads((previous) => reconcile(next, previous));
       setRefreshError(null);
     }
-  }, []);
+  }, [reconcile]);
 
   useEffect(() => {
     let disposed = false;
     let refreshing = false;
-    const timer = setInterval(async () => {
+    const update = async () => {
       if (disposed || refreshing || document.visibilityState === "hidden") return;
       refreshing = true;
       try {
@@ -55,8 +66,16 @@ export function useChats({ initialThreads, initialThreadId, shareableTrails, use
       } finally {
         refreshing = false;
       }
-    }, 10000);
-    return () => { disposed = true; clearInterval(timer); };
+    };
+    const timer = setInterval(() => { void update(); }, 10000);
+    window.addEventListener("online", update);
+    document.addEventListener("visibilitychange", update);
+    return () => {
+      disposed = true;
+      clearInterval(timer);
+      window.removeEventListener("online", update);
+      document.removeEventListener("visibilitychange", update);
+    };
   }, [refresh]);
 
   const requestCount = threads.filter((thread) => thread.isRequest).length;
@@ -118,27 +137,40 @@ export function useChats({ initialThreads, initialThreadId, shareableTrails, use
   const decline = async (id: string, block = false) => {
     await updateChatRequest(id, block ? "block" : "delete");
     ++refreshVersion.current;
+    confirmedMessages.current.delete(id);
     setThreads((all) => all.filter((thread) => thread.id !== id));
     setActiveId((current) => current === id ? null : current);
   };
 
-  const send = async (input: SendChatInput) => {
+  const send = async (input: SendChatInput, messageId = crypto.randomUUID()) => {
     if (!active) throw new Error("Select a conversation first.");
-    const saved = await sendChatMessage(active.id, input);
+    let saved: ChatMessage;
+    for (let attempt = 0; ; attempt++) {
+      try {
+        saved = await sendChatMessage(active.id, input, messageId);
+        break;
+      } catch (error) {
+        if (attempt === 2) throw error;
+        console.error("Chat delivery failed; retrying with the same message ID:", error);
+        await new Promise((resolve) => setTimeout(resolve, attempt === 0 ? 500 : 1500));
+      }
+    }
+    const confirmed = confirmedMessages.current.get(active.id) ?? [];
+    if (!confirmed.some((message) => message.id === saved.id)) {
+      confirmedMessages.current.set(active.id, [...confirmed, saved]);
+    }
     ++refreshVersion.current;
-    setThreads((all) => all.map((thread) => thread.id === active.id ? {
-      ...thread,
-      isRequest: false,
-      unread: false,
-      time: "now",
-      messages: thread.messages.some((message) => message.id === saved.id)
-        ? thread.messages : [...thread.messages, saved],
-    } : thread));
-  };
-
-  const selectedTrail = () => {
-    if (!active || !shareableTrails.length) throw new Error("No trail is available to share.");
-    return shareableTrails[active.messages.length % shareableTrails.length];
+    setThreads((all) => {
+      const current = all.some((thread) => thread.id === active.id) ? all : [...all, active];
+      return current.map((thread) => thread.id === active.id ? {
+        ...thread,
+        isRequest: false,
+        unread: false,
+        time: "now",
+        messages: thread.messages.some((message) => message.id === saved.id)
+          ? thread.messages : [...thread.messages, saved],
+      } : thread);
+    });
   };
 
   const start = async (personId: string) => {
@@ -167,8 +199,8 @@ export function useChats({ initialThreads, initialThreadId, shareableTrails, use
   return {
     threads, visibleThreads, active, tab, search, requestCount, refreshError,
     setSearch, selectTab, selectThread, toggleFollow, accept, decline, start, createGroup, rsvp,
-    sendText: (text: string) => send({ kind: "text", text }),
-    shareTrail: () => send({ kind: "trail", trailId: selectedTrail().id }),
-    proposeHike: () => send({ kind: "proposal", trailId: selectedTrail().id }),
+    sendText: (text: string, messageId?: string) => send({ kind: "text", text }, messageId),
+    shareTrail: (trailId: string) => send({ kind: "trail", trailId }),
+    proposeHike: (trailId: string) => send({ kind: "proposal", trailId }),
   };
 }
