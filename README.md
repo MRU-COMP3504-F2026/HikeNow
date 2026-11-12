@@ -164,6 +164,18 @@ Vercel handles deployment separately.
 Tests are co-located with the code (`*.test.ts` / `*.test.tsx`) and cover server actions, hooks,
 libraries and components. Test setup cleans the JSDOM document between tests.
 
+**Adding new tests**
+
+1. Add a file next to the feature using the naming convention `*.test.tsx`.
+2. Import `describe`, `it`, and `expect` from `vitest`.
+3. Render React components with `render` from `@testing-library/react`.
+4. Query the component the way a user would, preferably with `getByRole`, `getByLabelText`, or `getByText`.
+5. Add assertions for the required behavior, including important states and user interactions.
+6. Mock Next.js-only dependencies when necessary. Existing tests mock `next/link`, `next/navigation`, and
+   `next/font/google` so components can run in JSDOM.
+7. Run the tests locally with `npm test`.
+8. New tests will automatically be configured without the need to change CI config.
+
 ---
 
 ## Appendix: CI platform comparison
