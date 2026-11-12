@@ -105,6 +105,7 @@ export default function ReviewForm({ trail }: ReviewFormProps) {
   const fileInput = useRef<HTMLInputElement>(null);
 
   const [title, setTitle] = useState("");
+  const [hikeDate, setHikeDate] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [condition, setCondition] = useState<Condition | null>(null);
   const [rating, setRating] = useState(0);
@@ -157,57 +158,98 @@ export default function ReviewForm({ trail }: ReviewFormProps) {
 
 async function handleSave() {
   if (saving) return;
+
   if (!title.trim()) {
     setError("Please enter a title for your review.");
     return;
   }
+
+  if (!hikeDate) {
+    setError("Please select the date you completed this hike.");
+    return;
+  }
+
   if (rating === 0) {
     setError("Please rate the trail before saving.");
     return;
   }
+
   if (condition === null) {
     setError("Please specify the condition of the trail before saving.");
     return;
   }
+
   setError(null);
   setSaving(true);
 
   try {
     const formData = new FormData();
+
     formData.append("hikeId", trail.id);
+    formData.append("hikeDate", hikeDate);
     formData.append("rating", rating.toString());
     formData.append("tags", tags.join(", "));
-    formData.append("condition", condition ?? "good");
+    formData.append("condition", condition);
     formData.append("comments", comments);
     formData.append("title", title);
 
     const photo = photos[0]?.file;
+
     if (photo) {
       const photoPath = await uploadReviewPhoto(photo);
+
       if (!photoPath.success) {
         setError(photoPath.error);
         return;
       }
+
       formData.append("photoPath", photoPath.path);
     }
 
     const result = await createReview(formData);
+
     if (!result.success) {
       setError(result.error ?? "Failed to save review.");
       return;
     }
 
+    // Release temporary photo preview URLs before clearing the form.
+    photos.forEach((photo) => URL.revokeObjectURL(photo.url));
+
+    // Clear all form fields so a new review always starts fresh.
+    setTitle("");
+    setHikeDate("");
+    setTags([]);
+    setCondition(null);
+    setRating(0);
+    setEquipment([]);
+    setPhotos([]);
+    setComments("");
+    setPicker(null);
+    setError(null);
+
+    // Show the success confirmation after the review has been saved.
     setSaved(true);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to save review.";
+    const message =
+      err instanceof Error ? err.message : "Failed to save review.";
+
     setError(message);
   } finally {
     setSaving(false);
   }
 }
+
   function goBack() {
-    router.push(`/reviews/${trail.id}`);
-  }
+  // Close any open modal before leaving the review form.
+  setSaved(false);
+  setPicker(null);
+  setError(null);
+
+  // Return to the trail reviews page.
+  router.replace(`/reviews/${trail.id}`);
+  router.refresh();
+}
 
   return (
     <>
@@ -233,6 +275,21 @@ async function handleSave() {
               placeholder="Give your review a title"
               className="rounded-control border border-field-border bg-background px-3 py-2 text-small text-text placeholder:text-placeholder focus-visible:outline-2 focus-visible:outline-primary"
             />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="hikeDate" className={labelClasses}>
+              Date of hike <span className="text-danger">*</span>
+            </label>
+
+            <input
+              id="hikeDate"
+              type="date"
+              value={hikeDate}
+              onChange={(e) => setHikeDate(e.target.value)}
+              required
+              className="rounded-control border border-field-border bg-background px-3 py-2 text-small text-text focus-visible:outline-2 focus-visible:outline-primary"
+              />
           </div>
 
           {/* Section 2: Trail + Tags */}

@@ -1,23 +1,24 @@
-import { 
-  pgTable, 
-  uuid, 
-  varchar, 
-  text, 
-  decimal, 
+import {
+  pgTable,
+  uuid,
+  varchar,
+  text,
+  decimal,
   primaryKey,
   timestamp,
+  date,
   uniqueIndex,
   integer,
   boolean,
   jsonb,
   index,
   check,
-  pgPolicy 
+  pgPolicy
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import type { ChatContent, Rsvp } from "../chats/types";
 
-// 1. HIKER 
+// 1. HIKER
 export const hiker = pgTable(
   "hiker",
   {
@@ -113,7 +114,7 @@ export const group = pgTable(
   ]
 ).enableRLS();
 
-// 3. MEMBER 
+// 3. MEMBER
 export const member = pgTable(
   "member",
   {
@@ -139,7 +140,7 @@ export const member = pgTable(
   ]
 ).enableRLS();
 
-// 4. FOLLOW 
+// 4. FOLLOW
 export const follow = pgTable(
   "follow",
   {
@@ -193,7 +194,7 @@ export const hike = pgTable(
   ]
 ).enableRLS();
 
-// 6. REVIEW 
+// 6. REVIEW
 export const review = pgTable(
   "review",
   {
@@ -210,7 +211,9 @@ export const review = pgTable(
     condition: varchar("condition", { length: 255 }),
     comments: text("comments"),
     title: varchar("title", { length: 255 }),
+    hikeDate: date("hike_date"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+
   },
   (table) => [
     pgPolicy("Reviews are viewable by everyone", {

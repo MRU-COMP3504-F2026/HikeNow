@@ -9,7 +9,15 @@ vi.mock("../actions/reviews", () => ({ createReview, createReviewPhotoUpload }))
 vi.mock("@supabase/ssr", () => ({
   createBrowserClient: () => ({ storage: { from: () => ({ uploadToSignedUrl }) } }),
 }));
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    refresh: vi.fn(),
+  }),
+}));
+
 vi.mock("next/link", () => ({ default: "a" }));
 
 beforeEach(() => {
@@ -19,11 +27,39 @@ beforeEach(() => {
 });
 
 function completeForm(photo?: File) {
-  const { container } = render(<ReviewForm trail={{ id: "trail-id", name: "Test trail", photo: "/trail.jpg", equipment: "" }} />);
-  if (photo) fireEvent.change(container.querySelector('input[type="file"]')!, { target: { files: [photo] } });
-  fireEvent.change(screen.getByLabelText(/Title/), { target: { value: "Great hike" } });
+  const { container } = render(
+    <ReviewForm
+      trail={{
+        id: "trail-id",
+        name: "Test trail",
+        photo: "/trail.jpg",
+        equipment: "",
+      }}
+    />,
+  );
+
+  if (photo) {
+    fireEvent.change(container.querySelector('input[type="file"]')!, {
+      target: { files: [photo] },
+    });
+  }
+
+  fireEvent.change(screen.getByLabelText(/Title/), {
+    target: { value: "Great hike" },
+  });
+
+  fireEvent.change(screen.getByLabelText(/Date of hike/), {
+    target: { value: "2025-06-15" },
+  });
+
   fireEvent.click(screen.getByRole("radio", { name: "Good" }));
-  fireEvent.click(screen.getByRole("button", { name: "Rate 5 out of 5 stars" }));
+
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: "Rate 5 out of 5 stars",
+    }),
+  );
+
   fireEvent.click(screen.getByRole("button", { name: "Save" }));
 }
 
@@ -35,6 +71,7 @@ it("shows an error rather than the saved dialog when the server rejects a review
   const data = createReview.mock.calls[0][0] as FormData;
   expect(data.has("hikerId")).toBe(false);
   expect(data.get("hikeId")).toBe("trail-id");
+  expect(data.get("hikeDate")).toBe("2025-06-15");
   expect(screen.getByLabelText("Trail")).toHaveAttribute("readonly");
   expect(screen.getByLabelText("Trail")).toHaveValue("Test trail");
   expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
@@ -66,5 +103,38 @@ it("does not save the review when the photo upload fails", async () => {
   vi.spyOn(console, "error").mockImplementation(() => {});
   completeForm(new File(["jpeg"], "trail.jpg", { type: "image/jpeg" }));
   expect(await screen.findByRole("alert")).toHaveTextContent("Could not upload your photo");
+  expect(createReview).not.toHaveBeenCalled();
+});
+
+it("requires a hike date before submitting the review", async () => {
+  render(
+    <ReviewForm
+      trail={{
+        id: "trail-id",
+        name: "Test trail",
+        photo: "/trail.jpg",
+        equipment: "",
+      }}
+    />,
+  );
+
+  fireEvent.change(screen.getByLabelText(/Title/), {
+    target: { value: "Great hike" },
+  });
+
+  fireEvent.click(screen.getByRole("radio", { name: "Good" }));
+
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: "Rate 5 out of 5 stars",
+    }),
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Please select the date you completed this hike.",
+  );
+
   expect(createReview).not.toHaveBeenCalled();
 });
