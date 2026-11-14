@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import Footer from "../../components/footer";
 import { UserIcon } from "../../components/icons";
 import Navbar from "../../components/session-navbar";
+import ReviewDateFilter from "../../components/review-date-filter";
 import StarRating from "../../components/star-rating";
 import Tag from "../../components/tag";
 import { profileHref } from "../../lib/hiker-search";
@@ -349,6 +350,11 @@ const formattedReviews: ReviewUI[] = reviewsData
           </div>
         </section>
       )}
+
+      {/* Review date filter */}
+<div className="mb-4 flex justify-end">
+  <ReviewDateFilter />
+</div>
 
       {/* Reviews list */}
       <section className="flex flex-col gap-4" aria-label="Trail reviews">
