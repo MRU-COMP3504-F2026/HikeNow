@@ -3,11 +3,12 @@
 import { db } from "@/app/db";
 import { review } from "@/app/db/schema";
 import { createClient } from "@/app/db/server";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, gte, lte, sql } from "drizzle-orm";
 import { getCurrentUser } from "@/app/lib/session";
 import { redirect } from "next/navigation";
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { randomUUID } from "node:crypto";
+import { getReviewDateRange, isReviewDatePeriod, type ReviewDatePeriod } from "@/app/lib/review-date";
 import {
   REVIEW_PHOTO_BUCKET, REVIEW_PHOTO_TYPES, isOwnedReviewPhotoPath, reviewPhotoError,
 } from "@/app/lib/review-photos";
@@ -31,6 +32,42 @@ export const getReviews = unstable_cache(
   ["all-reviews-v4"],
   { tags: ["reviews"] }
 );
+
+export async function getReviewsForHike(hikeId: string, period: ReviewDatePeriod) {
+  if (!isReviewDatePeriod(period)) {
+    throw new TypeError("Invalid review date period.");
+  }
+
+  const range = getReviewDateRange(period);
+
+  return unstable_cache(
+    async () => {
+      const conditions = [eq(review.hikeId, hikeId)];
+      if (range) {
+        conditions.push(
+          gte(review.hikeDate, range.startDate),
+          lte(review.hikeDate, range.endDate),
+        );
+      }
+
+      const rows = await db
+        .select()
+        .from(review)
+        .where(and(...conditions))
+        .orderBy(
+          sql`${review.hikeDate} desc nulls last`,
+          sql`${review.createdAt} desc nulls last`,
+        );
+
+      return rows.map((row) => ({
+        ...row,
+        createdAt: row.createdAt?.toISOString() ?? null,
+      }));
+    },
+    [`reviews-for-hike-${hikeId}-${period}-${range?.startDate ?? "all"}`],
+    { tags: ["reviews"] },
+  )();
+}
 
 // 2. SELECT REVIEW BY ID
 export async function getReviewById(id: string) {
