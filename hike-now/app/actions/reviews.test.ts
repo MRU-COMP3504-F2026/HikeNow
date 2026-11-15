@@ -15,7 +15,16 @@ vi.mock("next/cache", () => ({
   unstable_cache: (callback: () => unknown) => callback,
   revalidatePath: mocks.revalidatePath, revalidateTag: mocks.revalidateTag,
 }));
-import { createReview, createReviewPhotoUpload, updateReview, deleteReview, getReviews, getReviewById } from "./reviews";
+import { PgDialect } from "drizzle-orm/pg-core";
+import {
+  createReview,
+  createReviewPhotoUpload,
+  updateReview,
+  deleteReview,
+  getReviews,
+  getReviewsForHike,
+  getReviewById,
+} from "./reviews";
 
 function form() {
   const data = new FormData();
@@ -106,6 +115,46 @@ it("rejects missing, malformed, impossible, and future hike dates", async () => 
     const single = await getReviewById("dated-review");
     expect(single).toEqual(all[0]);
     expect(JSON.parse(JSON.stringify(single))).toEqual(single);
+  });
+
+  it("filters a trail's reviews by the selected inclusive hike-date range in the database", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-11-15T10:00:00Z"));
+    const rows = [{ id: "dated-review", createdAt: new Date("2026-11-10T12:00:00Z") }];
+    const orderBy = vi.fn().mockResolvedValue(rows);
+    const where = vi.fn().mockReturnValue({ orderBy });
+    mocks.select.mockReturnValue({
+      from: vi.fn().mockReturnValue({ where }),
+    });
+
+    try {
+      const filtered = await getReviewsForHike("hike-id", "week");
+      const condition = where.mock.calls[0][0];
+      const query = new PgDialect().sqlToQuery(condition);
+
+      expect(query.params).toEqual(["hike-id", "2026-11-09", "2026-11-15"]);
+      expect(query.sql).toContain('"hike_id" =');
+      expect(query.sql).toContain('"hike_date" >=');
+      expect(query.sql).toContain('"hike_date" <=');
+      expect(filtered[0].createdAt).toBe("2026-11-10T12:00:00.000Z");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("does not apply a date range to all reviews and rejects invalid periods", async () => {
+    const orderBy = vi.fn().mockResolvedValue([]);
+    const where = vi.fn().mockReturnValue({ orderBy });
+    mocks.select.mockReturnValue({
+      from: vi.fn().mockReturnValue({ where }),
+    });
+
+    await getReviewsForHike("hike-id", "all");
+    expect(new PgDialect().sqlToQuery(where.mock.calls[0][0]).params).toEqual(["hike-id"]);
+    await expect(getReviewsForHike("hike-id", "invalid" as never)).rejects.toThrow(
+      "Invalid review date period.",
+    );
+    expect(mocks.select).toHaveBeenCalledTimes(1);
   });
 
   it("redirects signed-out writes before database or storage access", async () => {

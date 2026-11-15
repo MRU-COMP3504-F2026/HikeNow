@@ -1,8 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-
-export type ReviewDatePeriod = "all" | "week" | "month" | "year";
+import { isReviewDatePeriod, type ReviewDatePeriod } from "../lib/review-date";
 
 const DATE_FILTER_OPTIONS: {
   value: ReviewDatePeriod;
@@ -19,8 +18,8 @@ export default function ReviewDateFilter() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const selectedPeriod =
-  (searchParams.get("period") as ReviewDatePeriod | null) ?? "all";
+  const periodParam = searchParams.get("period");
+  const selectedPeriod = isReviewDatePeriod(periodParam) ? periodParam : "all";
 
   function handleFilterChange(period: ReviewDatePeriod) {
   const params = new URLSearchParams(searchParams.toString());

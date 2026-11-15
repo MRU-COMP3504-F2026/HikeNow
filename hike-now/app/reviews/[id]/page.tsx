@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import Footer from "../../components/footer";
 import { UserIcon } from "../../components/icons";
@@ -9,8 +10,9 @@ import Tag from "../../components/tag";
 import { profileHref } from "../../lib/hiker-search";
 
 import { getHikes, getHikeById } from "../../actions/hikes";
-import { getReviews } from "../../actions/reviews";
+import { getReviewsForHike } from "../../actions/reviews";
 import { getHikers } from "../../actions/hikers";
+import { isReviewDatePeriod, type ReviewDatePeriod } from "../../lib/review-date";
 
 export const instant = false;
 
@@ -41,6 +43,7 @@ function formatHikeDate(date: string) {
 
 interface PageProps {
   params: Promise<{ id: string }> | { id: string };
+  searchParams: Promise<{ period?: string | string[] }>;
 }
 
 // Generate static params dynamically with DB fallback for CI/CD builds
@@ -232,13 +235,21 @@ function getTopTags(reviews: ReviewUI[], limit = 5): TagSummary[] {
     .slice(0, limit);
 }
 
-async function ReviewsContent({ params }: PageProps) {
-  const resolvedParams = await params;
+async function ReviewsContent({ params, searchParams }: PageProps) {
+  const [resolvedParams, resolvedSearchParams] = await Promise.all([params, searchParams]);
   const trailId = resolvedParams.id;
+  const periodParam = resolvedSearchParams.period;
+  const period: ReviewDatePeriod = isReviewDatePeriod(periodParam)
+    ? periodParam
+    : "all";
+
+  if (period !== "all") {
+    await connection();
+  }
 
   const [currentHike, rawReviews, rawHikers] = await Promise.all([
     getHikeById(trailId),
-    getReviews(),
+    getReviewsForHike(trailId, period),
     getHikers(),
   ]);
 
@@ -256,7 +267,6 @@ async function ReviewsContent({ params }: PageProps) {
   };
 
 const formattedReviews: ReviewUI[] = reviewsData
-  .filter((r) => r.hikeId === currentHike.id)
   .sort((a, b) => {
     if (a.hikeDate && b.hikeDate) {
       const dateCompare = b.hikeDate.localeCompare(a.hikeDate);
@@ -364,7 +374,9 @@ const formattedReviews: ReviewUI[] = reviewsData
           ))
         ) : (
           <p className="text-text-subtle">
-            No reviews submitted for this trail yet.
+            {period === "all"
+              ? "No reviews submitted for this trail yet."
+              : "No reviews found for this date range."}
           </p>
         )}
       </section>
@@ -372,7 +384,7 @@ const formattedReviews: ReviewUI[] = reviewsData
   );
 }
 
-export default function ReviewsPage({ params }: PageProps) {
+export default function ReviewsPage({ params, searchParams }: PageProps) {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <Navbar />
@@ -383,7 +395,7 @@ export default function ReviewsPage({ params }: PageProps) {
             <p className="text-text-subtle">Loading trail reviews...</p>
           }
         >
-          <ReviewsContent params={params} />
+          <ReviewsContent params={params} searchParams={searchParams} />
         </Suspense>
       </main>
 
