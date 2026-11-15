@@ -56,8 +56,8 @@ describe("Dropdown", () => {
 });
 
 describe("TrailFilterDropdown", () => {
-  it("displays the 6 filter options from the prototype", () => {
-    render(<TrailFilterDropdown onChange={() => {}} />);
+  it("displays the sort options and clear option", () => {
+    render(<TrailFilterDropdown onChange={() => {}} onClear={() => {}} />);
     fireEvent.click(screen.getByRole("button", { name: "Filter trails" }));
     expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual([
       "Difficulty (Low to High)",
@@ -66,15 +66,24 @@ describe("TrailFilterDropdown", () => {
       "Length (Long to Short)",
       "Name (A → Z)",
       "Name (Z → A)",
+      "Clear filter",
     ]);
-    expect(TRAIL_FILTER_OPTIONS).toHaveLength(6);
+    expect(TRAIL_FILTER_OPTIONS).toHaveLength(7);
   });
 
   it("calls onChange with the option value", () => {
     const onChange = vi.fn();
-    render(<TrailFilterDropdown onChange={onChange} />);
+    render(<TrailFilterDropdown onChange={onChange} onClear={() => {}} />);
     fireEvent.click(screen.getByRole("button", { name: "Filter trails" }));
     fireEvent.click(screen.getByRole("option", { name: "Length (Long to Short)" }));
     expect(onChange).toHaveBeenCalledWith("length-desc");
+  });
+
+  it("calls onClear when the clear option is selected", () => {
+    const onClear = vi.fn();
+    render(<TrailFilterDropdown onChange={() => {}} onClear={onClear} />);
+    fireEvent.click(screen.getByRole("button", { name: "Filter trails" }));
+    fireEvent.click(screen.getByRole("option", { name: "Clear filter" }));
+    expect(onClear).toHaveBeenCalledOnce();
   });
 });

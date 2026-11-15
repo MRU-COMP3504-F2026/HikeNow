@@ -79,6 +79,7 @@ export default function FeaturedTrails({ trails }: { trails: FeaturedTrail[] }) 
         <TrailFilterDropdown
           value={filter}
           onChange={setFilter}
+          onClear={() => setFilter(undefined)}
           className="w-auto"
         />
       </section>

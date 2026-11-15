@@ -72,5 +72,9 @@ describe("FeaturedTrails", () => {
       expect(visibleTrailNames()).toEqual(expectedNames);
       expect(filterButton).toHaveAttribute("aria-expanded", "false");
     }
+
+    fireEvent.click(filterButton);
+    fireEvent.click(screen.getByRole("option", { name: "Clear filter" }));
+    expect(visibleTrailNames()).toEqual(["Cedar Loop", "Alpine Ridge", "Meadow Walk"]);
   });
 });
