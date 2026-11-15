@@ -13,6 +13,7 @@ import { getHikes, getHikeById } from "../../actions/hikes";
 import { getReviewsForHike } from "../../actions/reviews";
 import { getHikers } from "../../actions/hikers";
 import { isReviewDatePeriod, type ReviewDatePeriod } from "../../lib/review-date";
+import { getTopReviewTags } from "../../lib/review-tags";
 
 export const instant = false;
 
@@ -211,30 +212,6 @@ function ReviewCard({ review }: { review: ReviewUI }) {
   );
 }
 
-type TagSummary = {
-  tag: string;
-  count: number;
-};
-
-function getTopTags(reviews: ReviewUI[], limit = 5): TagSummary[] {
-  const counts = new Map<string, number>();
-
-  reviews.forEach((review) => {
-    review.tags.forEach((tag) => {
-      const normalizedTag = tag.trim().toLowerCase();
-
-      if (normalizedTag) {
-        counts.set(normalizedTag, (counts.get(normalizedTag) ?? 0) + 1);
-      }
-    });
-  });
-
-  return Array.from(counts.entries())
-    .map(([tag, count]) => ({ tag, count }))
-    .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag))
-    .slice(0, limit);
-}
-
 async function ReviewsContent({ params, searchParams }: PageProps) {
   const [resolvedParams, resolvedSearchParams] = await Promise.all([params, searchParams]);
   const trailId = resolvedParams.id;
@@ -247,13 +224,15 @@ async function ReviewsContent({ params, searchParams }: PageProps) {
     await connection();
   }
 
-  const [currentHike, rawReviews, rawHikers] = await Promise.all([
+  const [currentHike, rawReviews, rawHikers, allTimeReviews] = await Promise.all([
     getHikeById(trailId),
     getReviewsForHike(trailId, period),
     getHikers(),
+    period === "all" ? Promise.resolve(null) : getReviewsForHike(trailId, "all"),
   ]);
 
   const reviewsData = rawReviews ?? [];
+  const trailReviewsData = allTimeReviews ?? reviewsData;
   const hikersData = rawHikers ?? [];
 
   if (!currentHike) {
@@ -311,7 +290,14 @@ const formattedReviews: ReviewUI[] = reviewsData
     };
   });
 
-  const topTags = getTopTags(formattedReviews);
+  const topTags = getTopReviewTags(
+    trailReviewsData.map((review) => ({
+      tags: review.tags
+        ? review.tags.split(", ").map((tag) => tag.trim()).filter(Boolean)
+        : [],
+    })),
+    formattedReviews,
+  );
 
   return (
     <>
