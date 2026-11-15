@@ -10,19 +10,21 @@ export type TrailFilter =
   | "name-asc"
   | "name-desc";
 
-/** Las 6 opciones de la maqueta "Filter Page". */
-export const TRAIL_FILTER_OPTIONS: DropdownOption<TrailFilter>[] = [
+/** Las opciones de ordenación y restablecimiento de rutas. */
+export const TRAIL_FILTER_OPTIONS: DropdownOption<TrailFilter | "clear">[] = [
   { value: "difficulty-asc", label: "Difficulty (Low to High)" },
   { value: "difficulty-desc", label: "Difficulty (High to Low)" },
   { value: "length-asc", label: "Length (Short to Long)" },
   { value: "length-desc", label: "Length (Long to Short)" },
   { value: "name-asc", label: "Name (A → Z)" },
   { value: "name-desc", label: "Name (Z → A)" },
+  { value: "clear", label: "Clear filter" },
 ];
 
 export type TrailFilterDropdownProps = {
   value?: TrailFilter;
   onChange: (value: TrailFilter) => void;
+  onClear: () => void;
   className?: string;
 };
 
@@ -30,13 +32,20 @@ export type TrailFilterDropdownProps = {
 export default function TrailFilterDropdown({
   value,
   onChange,
+  onClear,
   className,
 }: TrailFilterDropdownProps) {
   return (
     <Dropdown
       options={TRAIL_FILTER_OPTIONS}
       value={value}
-      onChange={onChange}
+      onChange={(selected) => {
+        if (selected === "clear") {
+          onClear();
+        } else {
+          onChange(selected);
+        }
+      }}
       placeholder="Apply filters to your search"
       label="Filter trails"
       className={className}
