@@ -11,7 +11,7 @@ PostgreSQL on Supabase · Vitest + Testing Library · GitHub Actions.
 | You are... | Read |
 |---|---|
 | A user who wants to try the app | [Live demo](#live-demo), [Browser and device requirements](#browser-and-device-requirements), [Operational features](#operational-features-first-prototype), [Work in progress](#work-in-progress-wip), [How to report a bug](#how-to-report-a-bug), [Known bugs](#known-bugs) |
-| A developer who wants to contribute | [Quick start](#quick-start), [Build, test and run](#build-test-and-run), [Directory structure](#directory-structure), [Development process](#development-process) |
+| A developer who wants to contribute | [Quick start](#quick-start), [Build, test and run](#build-test-and-run), [Directory structure](#directory-structure), [Development process](#development-process), [Deployment](#deployment) |
 
 ## Team and project links
 
@@ -193,6 +193,9 @@ and [How to Write a Good Bug Report (marker.io)](https://marker.io/blog/how-to-w
 [Notable bug fixes](#notable-bug-fixes). Open bugs, if any are found later, are tracked in the
 [GitHub issue tracker](https://github.com/MRU-COMP3504-F2026/HikeNow/issues?q=is%3Aissue+label%3Abug).
 
+**Known limitations** (missing features, setup gaps and security notes that are not bugs) are logged as issues with the
+[`limitation` label](https://github.com/MRU-COMP3504-F2026/HikeNow/issues?q=is%3Aissue+label%3Alimitation).
+
 ---
 
 ## Directory structure
@@ -273,6 +276,35 @@ every **pull request**, from the `hike-now` directory, on Node.js 22:
 Rules: no secrets in the repository (`.env*` is ignored, only `.env.example` is committed);
 the `validate` job should pass before merging; database migrations are never run automatically by CI;
 Vercel handles deployment separately.
+
+### Deployment
+
+The live demo ([hike-now.vercel.app](https://hike-now.vercel.app/)) is hosted on **Vercel**, which is connected to this
+GitHub repository. Deploying is automatic; nothing is run by hand.
+
+| Item | Setting |
+|---|---|
+| Vercel project | `HikeNow`, linked to the `MRU-COMP3504-F2026/HikeNow` repository |
+| Production branch | `main`: every merge into `main` triggers a new production deployment |
+| Preview deployments | Vercel builds a preview for every pull request and branch push |
+| Root directory | `hike-now` (the app is in a subfolder of the repository) |
+| Build command | `npm run build` (Next.js default) |
+| Environment variables | `DATABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, set in Vercel under *Settings → Environment Variables* (the same three variables as in [Environment variables](#environment-variables)) |
+
+**To deploy a change**
+
+1. Open a Pull Request and wait for the `validate` CI job to pass (see [Continuous integration](#continuous-integration)).
+2. Merge the Pull Request into `main`. Vercel starts the production deployment on its own.
+3. If the change adds a database migration, apply it to the shared Supabase project **before** merging
+   (see [Database setup](#database-setup)). Migrations are never run by CI or by Vercel.
+4. Check the result: open the live demo, log in with the demo account, and post a review.
+
+**If a deployment fails or breaks the app:** in Vercel open *Deployments*, pick the last good deployment and choose
+*Promote to Production* (instant rollback), then fix the problem in a new Pull Request.
+
+**Production notes:** the session cookie is `Secure`, so production must be served over HTTPS (Vercel does this by
+default), and the build needs internet access to download the fonts. Rate limiting at the network level for the login
+endpoint is not configured yet (see the known limitations).
 
 ### Tests
 Tests are co-located with the code (`*.test.ts` / `*.test.tsx`) and cover server actions, hooks,
