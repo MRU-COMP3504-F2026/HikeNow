@@ -155,8 +155,11 @@ The weather integration was removed from the plan because it does not fit the pr
 
 ## How to report a bug
 
-Report bugs as a **GitHub issue**: [open a new issue](https://github.com/MRU-COMP3504-F2026/HikeNow/issues/new) and add the `bug` label.
-A good report lets someone else reproduce the problem without asking you questions. Please include:
+Report bugs with our **bug report form** on GitHub: [**Report a bug**](https://github.com/MRU-COMP3504-F2026/HikeNow/issues/new?template=bug_report.yml).
+The form opens with every field we need already in place and adds the `bug` label for you, so you only have to fill it in.
+If the link does not open the form, go to *Issues → New issue → Bug report*.
+
+A good report lets someone else reproduce the problem without asking you questions. The form asks for:
 
 1. **Title:** one line that says what is broken (for example "Review photo preview covers the navbar").
 2. **What happened** and **what you expected to happen**.
@@ -167,21 +170,7 @@ A good report lets someone else reproduce the problem without asking you questio
 7. **How often** it happens (always, sometimes, once) and how serious it is (blocks you, annoying, cosmetic).
 
 Do not include passwords, session cookies or the contents of your `.env` file. The demo account is safe to mention.
-
-Copy-paste template:
-
-```
-**What happened:**
-**What I expected:**
-**Steps to reproduce:**
-1.
-2.
-3.
-**Page / URL:**
-**Environment:** (browser + version, OS, desktop or mobile, live demo or local)
-**Screenshot / error message:**
-**Frequency and severity:**
-```
+The form is defined in [`.github/ISSUE_TEMPLATE/bug_report.yml`](./.github/ISSUE_TEMPLATE/bug_report.yml).
 
 More on writing good bug reports: [Bug Writing Guidelines (Mozilla)](https://developer.mozilla.org/en-US/docs/Mozilla/QA/Bug_writing_guidelines)
 and [How to Write a Good Bug Report (marker.io)](https://marker.io/blog/how-to-write-bug-report).
