@@ -1,0 +1,90 @@
+name: Bug report
+description: Report something that is broken in Hike Now!
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. The more detail you give, the easier it is to reproduce and fix.
+
+        **Do not include passwords, session cookies or the contents of your `.env` file.** The demo account is safe to mention.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe what is broken.
+      placeholder: "Example: the review photo preview covers the navbar when I scroll."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps, starting from a page or from the demo account.
+      placeholder: |
+        1. Log in with the demo account
+        2. Open a trail and click "Leave a review"
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: page
+    attributes:
+      label: Page / URL
+      placeholder: /reviews/12
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where did you see it?
+      options:
+        - Live demo (hike-now.vercel.app)
+        - Local build
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Browser, version and operating system
+      placeholder: Chrome 130, Windows 11
+    validations:
+      required: true
+  - type: dropdown
+    id: device
+    attributes:
+      label: Device
+      options:
+        - Desktop
+        - Phone
+        - Tablet
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshot or error message
+      description: Drag a screenshot or short screen recording here, or paste any error message (browser console, red error box).
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: How often does it happen?
+      options:
+        - Always
+        - Sometimes
+        - Once
+  - type: dropdown
+    id: severity
+    attributes:
+      label: How serious is it?
+      options:
+        - Blocks me
+        - Annoying
+        - Cosmetic
