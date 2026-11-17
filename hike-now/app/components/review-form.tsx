@@ -110,6 +110,8 @@ export default function ReviewForm({ trail }: ReviewFormProps) {
   const [condition, setCondition] = useState<Condition | null>(null);
   const [rating, setRating] = useState(0);
   const [equipment, setEquipment] = useState<string[]>([]);
+  const [stepCount, setStepCount] = useState("");
+  const [caloriesBurned, setCaloriesBurned] = useState("");
   const [photos, setPhotos] = useState<{ file: File; url: string }[]>([]);
   const [comments, setComments] = useState("");
   const [picker, setPicker] = useState<"tags" | "equipment" | null>(null);
@@ -156,6 +158,28 @@ export default function ReviewForm({ trail }: ReviewFormProps) {
     });
   }
 
+function resetForm() {
+  // Release any temporary photo preview URLs.
+  photos.forEach((photo) => URL.revokeObjectURL(photo.url));
+
+  // Reset all review fields.
+  setTitle("");
+  setHikeDate("");
+  setTags([]);
+  setCondition(null);
+  setRating(0);
+  setEquipment([]);
+  setStepCount("");
+  setCaloriesBurned("");
+  setPhotos([]);
+  setComments("");
+
+  // Reset form UI state.
+  setPicker(null);
+  setError(null);
+  setSaved(false);
+}
+
 async function handleSave() {
   if (saving) return;
 
@@ -193,6 +217,14 @@ async function handleSave() {
     formData.append("comments", comments);
     formData.append("title", title);
 
+    if (stepCount) {
+      formData.append("stepCount", stepCount);
+    }
+
+    if (caloriesBurned) {
+      formData.append("caloriesBurned", caloriesBurned);
+    }
+
     const photo = photos[0]?.file;
 
     if (photo) {
@@ -213,6 +245,10 @@ async function handleSave() {
       return;
     }
 
+    resetForm();
+    setSaved(true);
+
+    /*
     // Release temporary photo preview URLs before clearing the form.
     photos.forEach((photo) => URL.revokeObjectURL(photo.url));
 
@@ -227,6 +263,9 @@ async function handleSave() {
     setComments("");
     setPicker(null);
     setError(null);
+    */
+
+    resetForm();
 
     // Show the success confirmation after the review has been saved.
     setSaved(true);
@@ -368,6 +407,41 @@ async function handleSave() {
             </div>
           </div>
 
+{/* Optional activity details */}
+<div className="grid gap-6 sm:grid-cols-2">
+  <div className="flex flex-col gap-2">
+    <label htmlFor="stepCount" className={labelClasses}>
+      Step count <span className="text-text-subtle">(optional)</span>
+    </label>
+
+    <input
+      id="stepCount"
+      type="number"
+      min="0"
+      value={stepCount}
+      onChange={(e) => setStepCount(e.target.value)}
+      placeholder="e.g. 12450"
+      className="rounded-control border border-field-border bg-background px-3 py-2 text-small text-text placeholder:text-placeholder focus-visible:outline-2 focus-visible:outline-primary"
+    />
+  </div>
+
+  <div className="flex flex-col gap-2">
+    <label htmlFor="caloriesBurned" className={labelClasses}>
+      Calories burned <span className="text-text-subtle">(optional)</span>
+    </label>
+
+    <input
+      id="caloriesBurned"
+      type="number"
+      min="0"
+      value={caloriesBurned}
+      onChange={(e) => setCaloriesBurned(e.target.value)}
+      placeholder="e.g. 620"
+      className="rounded-control border border-field-border bg-background px-3 py-2 text-small text-text placeholder:text-placeholder focus-visible:outline-2 focus-visible:outline-primary"
+    />
+  </div>
+</div>
+
           {/* Section 4: Photos */}
           <div className="flex flex-col gap-2">
             <span className={labelClasses}>Photos</span>
@@ -421,14 +495,15 @@ async function handleSave() {
           {/* Section 5: Comments */}
           <div className="flex flex-col gap-2">
             <label htmlFor="comments" className={labelClasses}>
-              Comments
+              Comments / Landmarks
             </label>
+
             <textarea
               id="comments"
               value={comments}
               maxLength={MAX_COMMENT}
               onChange={(e) => setComments(e.target.value)}
-              placeholder="Your text here"
+              placeholder="Share your experience and any landmarks you noticed"
               rows={5}
               className="resize-y rounded-control border border-field-border bg-background p-3 text-small text-text placeholder:text-placeholder focus-visible:outline-2 focus-visible:outline-primary"
             />

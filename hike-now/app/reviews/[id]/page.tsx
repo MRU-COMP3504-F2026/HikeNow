@@ -29,6 +29,8 @@ type ReviewUI = {
   photoUrl?: string;
   hikeDate?: string;
   createdAt?: string;
+  stepCount?: number;
+  caloriesBurned?: number;
 };
 
 function formatHikeDate(date: string) {
@@ -152,6 +154,25 @@ function ReviewCard({ review }: { review: ReviewUI }) {
               </time>
             </p>
           )}
+
+          {/* Optional activity metrics */}
+{(review.stepCount !== undefined ||
+  review.caloriesBurned !== undefined) && (
+  <p className="mb-2 text-small text-text-subtle">
+    {review.stepCount !== undefined && (
+      <span>{review.stepCount.toLocaleString()} steps</span>
+    )}
+
+    {review.stepCount !== undefined &&
+      review.caloriesBurned !== undefined && (
+        <span aria-hidden="true"> · </span>
+      )}
+
+    {review.caloriesBurned !== undefined && (
+      <span>{review.caloriesBurned.toLocaleString()} calories burned</span>
+    )}
+  </p>
+)}
 
           <p className="mb-5 max-w-2xl text-small leading-5 text-text">
             {review.comment}
@@ -287,6 +308,9 @@ const formattedReviews: ReviewUI[] = reviewsData
       photoUrl: r.photo ?? undefined,
       hikeDate: r.hikeDate ?? undefined,
       createdAt: r.createdAt ?? undefined,
+      stepCount: r.stepCount ?? undefined,
+      caloriesBurned: r.caloriesBurned ?? undefined,
+
     };
   });
 
