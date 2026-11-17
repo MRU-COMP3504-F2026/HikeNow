@@ -199,12 +199,39 @@ function readReviewFields(formData: FormData) {
     return value.trim();
   }
 
+  function optionalNonNegativeInteger(name: string) {
+    const value = formData.get(name);
+
+    if (value === null || value === "") {
+      return null;
+    }
+
+    if (typeof value !== "string" || !/^\d+$/.test(value)) {
+      throw new ReviewValidationError(
+        `Please enter a valid ${name}.`
+      );
+    }
+
+    const parsed = Number(value);
+
+    if (!Number.isSafeInteger(parsed) || parsed < 0) {
+      throw new ReviewValidationError(
+        `Please enter a valid ${name}.`
+      );
+    }
+
+    return parsed;
+  }
+
   const title = text("title", 255);
   const rating = text("rating", 4);
   const condition = text("condition", 255);
   const tags = text("tags", 255);
   const comments = text("comments", 500);
   const hikeDate = text("hikeDate", 10);
+
+  const stepCount = optionalNonNegativeInteger("stepCount");
+  const caloriesBurned = optionalNonNegativeInteger("caloriesBurned");
 
   if (!title) {
     throw new ReviewValidationError(
@@ -237,7 +264,6 @@ function readReviewFields(formData: FormData) {
   }
 
   const [year, month, day] = hikeDate.split("-").map(Number);
-
   const parsedDate = new Date(Date.UTC(year, month - 1, day));
 
   const isValidDate =
@@ -271,5 +297,7 @@ function readReviewFields(formData: FormData) {
     tags,
     comments,
     hikeDate,
+    stepCount,
+    caloriesBurned,
   };
 }

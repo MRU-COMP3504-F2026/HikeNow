@@ -212,7 +212,10 @@ export const review = pgTable(
     comments: text("comments"),
     title: varchar("title", { length: 255 }),
     hikeDate: date("hike_date"),
+    stepCount: integer("step_count"),
+    caloriesBurned: integer("calories_burned"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    
 
   },
   (table) => [
