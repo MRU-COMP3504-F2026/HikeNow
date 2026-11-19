@@ -15,10 +15,11 @@ export type FeaturedTrail = Pick<
   | "photoCreditSource"
   | "photoCreditAuthorHref"
   | "photoCreditSourceHref"
-  | "rating"
   | "length"
   | "difficulty"
->;
+> & {
+  rating: number | null;
+};
 
 const difficultyRank: Record<string, number> = {
   easy: 0,
@@ -40,7 +41,15 @@ function compareUnknownLast(a: number | undefined, b: number | undefined, descen
 }
 
 export function sortFeaturedTrails(trails: FeaturedTrail[], filter?: TrailFilter) {
-  if (!filter) return trails;
+  if (!filter) {
+    return trails
+      .map((trail, index) => ({ trail, index }))
+      .sort(({ trail: a, index: aIndex }, { trail: b, index: bIndex }) => {
+        const comparison = compareUnknownLast(a.rating ?? undefined, b.rating ?? undefined, true);
+        return comparison || aIndex - bIndex;
+      })
+      .map(({ trail }) => trail);
+  }
 
   const descending = filter.endsWith("desc");
   return trails
@@ -104,7 +113,7 @@ export default function FeaturedTrails({ trails }: { trails: FeaturedTrail[] }) 
                   }
                 : undefined
             }
-            rating={Number(trail.rating ?? 0)}
+            rating={trail.rating}
             lengthKm={Number(trail.length ?? 0)}
             difficulty={(trail.difficulty ?? "").replace(" Difficulty", "")}
             href={`/reviews/${trail.id}`}

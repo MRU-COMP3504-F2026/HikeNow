@@ -12,7 +12,7 @@ const trails: FeaturedTrail[] = [
     photoCreditSource: null,
     photoCreditAuthorHref: null,
     photoCreditSourceHref: null,
-    rating: "4.5",
+    rating: 4.5,
     length: "4.5",
     difficulty: "Easy",
   },
@@ -25,7 +25,7 @@ const trails: FeaturedTrail[] = [
     photoCreditSource: null,
     photoCreditAuthorHref: null,
     photoCreditSourceHref: null,
-    rating: "4.8",
+    rating: 4.8,
     length: "12",
     difficulty: "High",
   },
@@ -38,7 +38,7 @@ const trails: FeaturedTrail[] = [
     photoCreditSource: null,
     photoCreditAuthorHref: null,
     photoCreditSourceHref: null,
-    rating: "4.2",
+    rating: 4.2,
     length: "2",
     difficulty: "Moderate",
   },
@@ -51,11 +51,36 @@ function visibleTrailNames() {
 }
 
 describe("FeaturedTrails", () => {
+  it("defaults to highest review average and shows N/A for trails with no ratings", () => {
+    render(
+      <FeaturedTrails
+        trails={[
+          ...trails,
+          {
+            ...trails[0],
+            id: "unrated",
+            name: "Unrated Trail",
+            rating: null,
+          },
+        ]}
+      />,
+    );
+
+    expect(visibleTrailNames()).toEqual([
+      "Alpine Ridge",
+      "Cedar Loop",
+      "Meadow Walk",
+      "Unrated Trail",
+    ]);
+    expect(screen.getByText("4.8 · 12.0 km · High Difficulty")).toBeInTheDocument();
+    expect(screen.getByText("N/A · 4.5 km · Easy Difficulty")).toBeInTheDocument();
+  });
+
   it("opens the filter menu from the icon button and sorts the displayed trails", () => {
     render(<FeaturedTrails trails={trails} />);
 
     const filterButton = screen.getByRole("button", { name: "Filter trails" });
-    expect(visibleTrailNames()).toEqual(["Cedar Loop", "Alpine Ridge", "Meadow Walk"]);
+    expect(visibleTrailNames()).toEqual(["Alpine Ridge", "Cedar Loop", "Meadow Walk"]);
 
     const sortOptions = [
       ["Difficulty (Low to High)", ["Cedar Loop", "Meadow Walk", "Alpine Ridge"]],
@@ -75,6 +100,6 @@ describe("FeaturedTrails", () => {
 
     fireEvent.click(filterButton);
     fireEvent.click(screen.getByRole("option", { name: "Clear filter" }));
-    expect(visibleTrailNames()).toEqual(["Cedar Loop", "Alpine Ridge", "Meadow Walk"]);
+    expect(visibleTrailNames()).toEqual(["Alpine Ridge", "Cedar Loop", "Meadow Walk"]);
   });
 });

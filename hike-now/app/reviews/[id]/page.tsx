@@ -13,6 +13,7 @@ import { getHikes, getHikeById } from "../../actions/hikes";
 import { getReviewsForHike } from "../../actions/reviews";
 import { getHikers } from "../../actions/hikers";
 import { isReviewDatePeriod, type ReviewDatePeriod } from "../../lib/review-date";
+import { getAverageReviewRating } from "../../lib/review-summary";
 import { getTopReviewTags } from "../../lib/review-tags";
 
 export const instant = false;
@@ -322,6 +323,7 @@ const formattedReviews: ReviewUI[] = reviewsData
     })),
     formattedReviews,
   );
+  const averageRating = getAverageReviewRating(reviewsData);
 
   return (
     <>
@@ -333,7 +335,7 @@ const formattedReviews: ReviewUI[] = reviewsData
           </h1>
 
           <p className="mt-2 text-heading font-semibold text-ink">
-            ★ {currentHike.rating ?? "N/A"} ({formattedReviews.length} reviews) ·{" "}
+            ★ {averageRating === null ? "N/A" : averageRating.toFixed(2)} ({formattedReviews.length} reviews) ·{" "}
             {currentHike.length ?? 0} km · {currentHike.difficulty ?? "N/A"}
           </p>
         </div>
