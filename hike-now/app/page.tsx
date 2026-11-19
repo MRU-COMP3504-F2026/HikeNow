@@ -2,13 +2,20 @@ import Footer from "./components/footer";
 import Navbar from "./components/session-navbar";
 import FeaturedTrails from "./components/featured-trails";
 
-// Import Server Action
-import { getHikes } from "./actions/hikes";
+import { getHikes, getHikeReviewAverages } from "./actions/hikes";
 
 export default async function Home() {
-  // Fetch hikes from PostgreSQL
-  const hikes = await getHikes();
-  const featuredTrails = hikes.slice(0, 8);
+  const [hikes, ratingRows] = await Promise.all([
+    getHikes(),
+    getHikeReviewAverages(),
+  ]);
+  const ratingsByHikeId = new Map(
+    ratingRows.map(({ hikeId, averageRating }) => [hikeId, averageRating]),
+  );
+  const featuredTrails = hikes.slice(0, 8).map((trail) => ({
+    ...trail,
+    rating: ratingsByHikeId.get(trail.id) ?? null,
+  }));
 
   return (
     <div className="flex min-h-screen flex-col bg-background">

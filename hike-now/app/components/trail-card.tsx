@@ -6,7 +6,7 @@ export type TrailCardProps = {
   location?: string;
   imageUrl: string;
   photoCredit?: { author: string; source: string; authorHref: string; sourceHref: string };
-  rating: number;
+  rating: number | null;
   lengthKm: number;
   difficulty: string;
   href: string;
@@ -62,9 +62,10 @@ export default function TrailCard({
       )}
 
       <p className="flex items-center gap-1 text-small text-ink">
-        <StarIcon filled size={12} />
+        {rating !== null && <StarIcon filled size={12} />}
         <span>
-          {numberFormat.format(rating)} · {numberFormat.format(lengthKm)} km ·{" "}
+          {rating === null ? "N/A" : numberFormat.format(rating)} ·{" "}
+          {numberFormat.format(lengthKm)} km ·{" "}
           {difficulty} Difficulty
         </span>
       </p>

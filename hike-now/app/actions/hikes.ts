@@ -1,8 +1,8 @@
 'use server';
 
 import { db } from "@/app/db";
-import { hike } from "@/app/db/schema";
-import { eq } from "drizzle-orm";
+import { hike, review } from "@/app/db/schema";
+import { and, eq, gte, lte, sql } from "drizzle-orm";
 import { revalidatePath, unstable_cache } from "next/cache";
 
 // 1. SELECT ALL HIKES (Cached for prerendering)
@@ -12,6 +12,20 @@ export const getHikes = unstable_cache(
   },
   ["all-hikes"],
   { tags: ["hikes"] }
+);
+
+export const getHikeReviewAverages = unstable_cache(
+  async () =>
+    db
+      .select({
+        hikeId: review.hikeId,
+        averageRating: sql<number>`avg(${review.rating})::float8`,
+      })
+      .from(review)
+      .where(and(gte(review.rating, "1"), lte(review.rating, "5")))
+      .groupBy(review.hikeId),
+  ["hike-review-averages-v1"],
+  { tags: ["reviews"] }
 );
 
 // 2. SELECT HIKE BY ID (Cached per ID)
