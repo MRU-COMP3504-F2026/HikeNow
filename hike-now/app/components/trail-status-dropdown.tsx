@@ -18,6 +18,8 @@ export type TrailStatusDropdownProps = {
   /** Estado actual. Si no se indica, se muestra "Not started". */
   value?: TrailStatus;
   onChange: (value: TrailStatus) => void;
+  /** Nombre accesible del desplegable. Por defecto "Trail status". */
+  label?: string;
   className?: string;
 };
 
@@ -25,6 +27,7 @@ export type TrailStatusDropdownProps = {
 export default function TrailStatusDropdown({
   value = DEFAULT_TRAIL_STATUS,
   onChange,
+  label = "Trail status",
   className,
 }: TrailStatusDropdownProps) {
   return (
@@ -32,7 +35,7 @@ export default function TrailStatusDropdown({
       options={TRAIL_STATUS_OPTIONS}
       value={value}
       onChange={onChange}
-      label="Trail status"
+      label={label}
       className={className}
     />
   );
