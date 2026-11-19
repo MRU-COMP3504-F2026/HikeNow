@@ -1,5 +1,12 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import { StarIcon } from "./star-rating";
+import TrailStatusDropdown, {
+  DEFAULT_TRAIL_STATUS,
+  type TrailStatus,
+} from "./trail-status-dropdown";
 
 export type TrailCardProps = {
   name: string;
@@ -30,6 +37,7 @@ export default function TrailCard({
   className = "",
 }: TrailCardProps) {
   const title = location ? `${name}, ${location}` : name;
+  const [status, setStatus] = useState<TrailStatus>(DEFAULT_TRAIL_STATUS);
 
   return (
     <article className={["flex flex-col gap-3", className].join(" ")}>
@@ -69,6 +77,12 @@ export default function TrailCard({
           {difficulty} Difficulty
         </span>
       </p>
+
+      <TrailStatusDropdown
+        value={status}
+        onChange={setStatus}
+        label={`Status of ${name}`}
+      />
     </article>
   );
 }
