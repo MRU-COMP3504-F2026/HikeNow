@@ -1,5 +1,4 @@
 "use client";
-
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { updateTrailStatus } from "../actions/trail-status"; // adjust path if needed
@@ -8,6 +7,7 @@ import TrailStatusDropdown, {
   DEFAULT_TRAIL_STATUS,
   type TrailStatus,
 } from "./trail-status-dropdown";
+
 
 export type TrailCardProps = {
   hikeId: string;
@@ -50,7 +50,14 @@ export default function TrailCard({
 }: TrailCardProps) {
   const title = location ? `${name}, ${location}` : name;
   const [status, setStatus] = useState<TrailStatus>(initialStatus);
-  const [, startTransition] = useTransition();
+  const [prevInitialStatus, setPrevInitialStatus] = useState<TrailStatus>(initialStatus);
+  const [isPending, startTransition] = useTransition();
+
+  if (initialStatus !== prevInitialStatus) {
+    setPrevInitialStatus(initialStatus);
+    setStatus(initialStatus);
+  }
+  
 
   useEffect(() => {
     setStatus(initialStatus);
