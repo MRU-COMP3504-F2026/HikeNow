@@ -10,6 +10,7 @@ const props = {
   lengthKm: 4.5,
   difficulty: "Easy",
   href: "/reviews/cedar",
+  hikeId: "fjfoji294"
 };
 
 describe("TrailCard status dropdown", () => {
