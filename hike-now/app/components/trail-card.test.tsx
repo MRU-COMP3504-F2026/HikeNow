@@ -2,6 +2,11 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import TrailCard from "./trail-card";
+import { vi } from "vitest";
+
+vi.mock("../actions/trail-status", () => ({
+  updateTrailStatus: vi.fn().mockResolvedValue(undefined),
+}));
 
 const props = {
   name: "Cedar Loop",
