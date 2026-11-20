@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { updateTrailStatus } from "../actions/trail-status"; // adjust path if needed
 import { StarIcon } from "./star-rating";
 import TrailStatusDropdown, {
@@ -51,18 +51,13 @@ export default function TrailCard({
   const title = location ? `${name}, ${location}` : name;
   const [status, setStatus] = useState<TrailStatus>(initialStatus);
   const [prevInitialStatus, setPrevInitialStatus] = useState<TrailStatus>(initialStatus);
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   if (initialStatus !== prevInitialStatus) {
     setPrevInitialStatus(initialStatus);
     setStatus(initialStatus);
   }
   
-
-  useEffect(() => {
-    setStatus(initialStatus);
-  }, [initialStatus]);
-
   function handleStatusChange(nextStatus: TrailStatus) {
     const previousStatus = status;
     setStatus(nextStatus);
