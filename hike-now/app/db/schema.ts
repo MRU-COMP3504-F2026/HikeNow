@@ -13,6 +13,7 @@ import {
   jsonb,
   index,
   check,
+  pgEnum,
   pgPolicy
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
@@ -228,6 +229,31 @@ export const review = pgTable(
       for: "insert",
       to: "authenticated",
       withCheck: sql`auth.uid() = hiker_id`,
+    }),
+  ]
+).enableRLS();
+
+export const hikeStatusEnum = pgEnum("hike_status", ["completed", "withdrawn"]);
+
+export const hikerHikes = pgTable(
+  "hiker_hikes",
+  {
+    hikerId: uuid("hiker_id")
+      .notNull()
+      .references(() => hiker.id, { onDelete: "cascade" }),
+    hikeId: uuid("hike_id")
+      .notNull()
+      .references(() => hike.id, { onDelete: "cascade" }),
+    status: hikeStatusEnum("status").notNull(),
+    loggedAt: timestamp("logged_at").defaultNow().notNull(),
+  },
+  (table) => [
+    // Prevents duplicate entries for the same hiker + hike pair
+    primaryKey({ columns: [table.hikerId, table.hikeId] }),
+    pgPolicy("Hiker logs are viewable by everyone", {
+      for: "select",
+      to: "public",
+      using: sql`true`,
     }),
   ]
 ).enableRLS();
