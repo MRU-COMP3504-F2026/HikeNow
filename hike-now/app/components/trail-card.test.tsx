@@ -21,14 +21,14 @@ const props = {
 
 describe("TrailCard status dropdown", () => {
   it("shows 'Not started' by default", () => {
-    render(<TrailCard {...props} />);
+    render(<TrailCard {...props} isLoggedIn />);
     expect(screen.getByRole("button", { name: "Status of Cedar Loop" })).toHaveTextContent(
       "Not started",
     );
   });
 
   it("lets the user change the status of the card", () => {
-    render(<TrailCard {...props} />);
+    render(<TrailCard {...props} isLoggedIn />);
     const button = screen.getByRole("button", { name: "Status of Cedar Loop" });
     fireEvent.click(button);
     fireEvent.click(screen.getByRole("option", { name: "Completed" }));
