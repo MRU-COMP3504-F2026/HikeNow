@@ -1,6 +1,11 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import FeaturedTrails, { type FeaturedTrail } from "./featured-trails";
+import { vi } from "vitest";
+
+vi.mock("../actions/trail-status", () => ({
+  updateTrailStatus: vi.fn().mockResolvedValue(undefined),
+}));
 
 const trails: FeaturedTrail[] = [
   {

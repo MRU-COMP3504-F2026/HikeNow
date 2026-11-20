@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { hike } from "../db/schema";
 import TrailCard from "./trail-card";
 import TrailFilterDropdown, { type TrailFilter } from "./trail-filter-dropdown";
+import type { TrailStatus } from "./trail-status-dropdown";
 
 export type FeaturedTrail = Pick<
   typeof hike.$inferSelect,
@@ -19,6 +20,7 @@ export type FeaturedTrail = Pick<
   | "difficulty"
 > & {
   rating: number | null;
+  initialStatus?: TrailStatus;
 };
 
 const difficultyRank: Record<string, number> = {
@@ -75,7 +77,13 @@ export function sortFeaturedTrails(trails: FeaturedTrail[], filter?: TrailFilter
     .map(({ trail }) => trail);
 }
 
-export default function FeaturedTrails({ trails }: { trails: FeaturedTrail[] }) {
+export default function FeaturedTrails({
+  trails,
+  isLoggedIn = false,
+}: {
+  trails: FeaturedTrail[];
+  isLoggedIn?: boolean;
+}) {
   const [filter, setFilter] = useState<TrailFilter>();
   const sortedTrails = useMemo(() => sortFeaturedTrails(trails, filter), [trails, filter]);
 
@@ -100,6 +108,9 @@ export default function FeaturedTrails({ trails }: { trails: FeaturedTrail[] }) 
         {sortedTrails.map((trail) => (
           <TrailCard
             key={trail.id}
+            hikeId={trail.id}
+            isLoggedIn={isLoggedIn}
+            initialStatus={trail.initialStatus}
             name={trail.name}
             location={trail.location ?? "Unknown location"}
             imageUrl={trail.photo ?? "/images/placeholder-trail.jpg"}
