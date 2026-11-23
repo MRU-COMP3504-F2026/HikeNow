@@ -10,8 +10,8 @@ PostgreSQL on Supabase · Vitest + Testing Library · GitHub Actions.
 
 | You are... | Read |
 |---|---|
-| A user who wants to try the app | [Live demo](#live-demo), [Browser and device requirements](#browser-and-device-requirements), [Operational features](#operational-features-first-prototype), [Work in progress](#work-in-progress-wip), [How to report a bug](#how-to-report-a-bug), [Known bugs](#known-bugs) |
-| A developer who wants to contribute | [Quick start](#quick-start), [Build, test and run](#build-test-and-run), [Directory structure](#directory-structure), [Development process](#development-process), [Deployment](#deployment) |
+| A user who wants to try the app | [Live demo](#live-demo), [Browser and device requirements](#browser-and-device-requirements), [Operational features](#operational-features-first-prototype), [Chats, follows and message requests](#chats-follows-and-message-requests), [Work in progress](#work-in-progress-wip), [How to report a bug](#how-to-report-a-bug), [Known bugs](#known-bugs) |
+| A developer who wants to contribute | [Quick start](#quick-start), [Build, test and run](#build-test-and-run), [Directory structure](#directory-structure), [Security, accounts and data notes](#security-accounts-and-data-notes), [Development process](#development-process), [Deployment](#deployment) |
 
 ## Team and project links
 
@@ -112,6 +112,45 @@ The migration [`0007_hike_dates.sql`](./hike-now/app/db/migrations/0007_hike_dat
 npm script yet: on a fresh database, run it in the Supabase SQL editor or with
 `psql "$DATABASE_URL" -f app/db/migrations/0007_hike_dates.sql`.
 
+### Security, accounts and data notes
+
+These notes come from the app's implementation and matter mostly when deploying or reviewing the project.
+
+**Authentication and sessions**
+
+- Passwords are hashed with salted scrypt. Login uses an HTTP-only session cookie, `Secure` in production (HTTPS required).
+- Sessions last seven days, are stored only as SHA-256 token hashes, and are revoked on logout or replaced on login.
+- Login and sign-up are limited to ten attempts per email per 15 minutes, using atomic database counters shared by all instances.
+- This is application authentication, **not** a Supabase Auth JWT: it does not change `auth.uid()` and does not authenticate
+  the optional Supabase client. `DATABASE_URL` must be a **server-only** connection; never expose it with a `NEXT_PUBLIC_` prefix.
+- `npm run db:auth` is transactional and safe to rerun. Rerun it periodically to purge expired sessions and rate-limit records.
+  Emails that differ only in case must be resolved before the first run, and unsupported legacy password hashes abort the
+  setup instead of being overwritten.
+- Public hiker data only exposes id, email, chosen name, bio and join date. Supabase anon/authenticated access to the password
+  column and to sessions is removed by the setup.
+- Signed-out visitors are redirected to `/login` when they open chats, the following feed or a review form, or try to follow
+  someone. Trails, reviews and other hikers' profiles stay public. Sessions are re-checked on every action.
+- Before a public deployment, configure ingress rate limiting for authentication requests and add email verification and
+  account recovery.
+
+**Profiles and accounts**
+
+- Run `npm run db:profiles` **before** deploying the updated app. It is safe to rerun. Accounts and reviews created before it
+  have no date: they show "Not recorded" and legacy reviews are listed after dated ones.
+- A chosen name (up to 50 characters) appears on profiles, reviews, search and chats; leaving it blank falls back to the name
+  derived from the email. The bio (up to 500 characters, line breaks allowed) is stored in `hiker.description`.
+- Account deletion is only offered on your own dashboard and requires your current password. It cascades to reviews,
+  memberships, follows and sessions. Uploaded photos in Supabase Storage are **not** deleted by the cascade and need a separate
+  cleanup policy.
+
+**Reviews and photos**
+
+- Reviews are always tied to a specific trail: unknown trail IDs return 404 and `/reviews/new` redirects to `/reviews`.
+- The server derives the review owner from the session (never from a client-sent ID); editing and deleting also require ownership.
+- Photos use Supabase Storage with presigned uploads: a Server Action signs a path under `reviews/<hiker-id>/`, the browser
+  uploads the file directly to the public `hike-reviews` bucket, and the review stores the public URL once the server confirms
+  the object exists. Create the bucket and its policy once per Supabase project with `npm run db:review-photos`.
+
 ---
 
 ## Operational features (first prototype)
@@ -125,10 +164,46 @@ npm script yet: on a fresh database, run it in the Supabase SQL editor or with
 | Follow hikers | Profile pages | Follow/unfollow persisted in PostgreSQL. |
 | Following feed | `/feed` | Reviews from the hikers you follow. |
 | Search | `/search` | Search hikers (by name or handle) and trails. |
-| Chats | `/chats` | Direct messages, message requests (accept / delete / block), group chats (2–14 invitees), @ mentions limited to other participants in the current chat, floating button-anchored hike pickers with name/location search for trail shares and hike proposals with RSVPs (no page resizing), auto-refresh every 10 s. |
+| Chats | `/chats` | Direct messages, message requests (accept / delete / block), group chats (2–14 invitees), @ mentions limited to other participants in the current chat, floating button-anchored hike pickers with name/location search for trail shares and hike proposals with RSVPs (no page resizing), auto-refresh every 10 s. Who can chat with whom: see [Chats, follows and message requests](#chats-follows-and-message-requests). |
 | Light/dark theme | Navbar | Theme toggle. |
 | Trail sorting | `/` | Sort trails by difficulty, length or name, and clear the sort. |
 | Hike date and date filter | `/reviews/[id]`, review form | Reviews record the date of the hike and are shown newest first; they can be filtered by period. |
+
+### Chats, follows and message requests
+
+Chats are built around the follow relationship. In short: **a conversation only flows normally between
+mutual followers** (both hikers follow each other); otherwise the recipient has to accept it first.
+
+| Situation | What happens |
+|---|---|
+| You follow a hiker | A **Message** button appears on their profile, and they show up in the **New chat** picker (the picker only lists hikers you follow). |
+| You do **not** follow a hiker | You cannot start a conversation with them. |
+| You follow each other (mutual followers) | The chat goes straight to **Messages** and both of you can write freely. |
+| You follow them, but they do not follow you back | They receive your message in **Requests** and can **Accept**, **Delete** (hide it for their account) or **Block**. Messages stay as a request until they accept or follow you back. |
+| Someone who does not follow you, and whom you do not follow, writes to you | Not possible: they would first have to follow you. |
+| You unfollow someone | Conversations that were already accepted stay usable; new conversations are not possible. |
+| Blocking | Blocking stops **both** participants from sending further messages. Unblocking is not exposed yet (see [Work in progress](#work-in-progress-wip)). |
+
+**Group chats**
+
+- Open **New chat** and select one recipient for a direct chat (an existing conversation is reused), or 2-14 recipients
+  for a group (3-15 members including you). Group names are optional; the members' names are used by default.
+- You must follow every hiker you invite. Invitees who follow the creator see the group in **Messages**; the others see a
+  request they can accept or decline (following the creator later moves the invitation to Messages).
+- Group messages show their sender, and hike proposals collect each member's RSVP.
+- Leaving is permanent and only affects that group. Adding members or rejoining a group is not supported yet.
+
+**Messages and reliability**
+
+- Text messages are 1-4000 characters. Trail shares, hike proposals and RSVPs are saved on the server.
+- Chats refresh every 10 seconds while the page is visible, and immediately when you return to the page or reconnect.
+- All reads and writes require a valid session and only participants can open a chat.
+- A failed message keeps its draft. Delivery is retried with the same message ID, so a lost response cannot create
+  duplicates. After a longer outage, attempts are retried every 10 seconds while the chat is open.
+- Drafts are stored in the browser's local storage (per account and conversation) until the server confirms delivery.
+  On a shared computer, clear the site data to remove them.
+- Deleting an account removes its direct conversations and authored messages; group chats stay available to the
+  remaining members.
 
 **Demo of a full vertical slice (UI → server → database → UI):**
 1. Open `/login`, create an account (a row is written to `hiker`; a session is stored in `hiker_session`).
