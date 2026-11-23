@@ -72,9 +72,9 @@ npm run dev                 # 3. start the app at http://localhost:3000
 | Install dependencies | `npm ci` | Reproducible install from `package-lock.json`. |
 | Run in development | `npm run dev` | http://localhost:3000, hot reload. |
 | Lint | `npm run lint` | ESLint. Must finish with 0 errors. |
-| **Run the tests** | `npm test` | Vitest, single run. About 220 unit/component tests; needs **no** database or `.env`. |
+| **Run the tests** | `npm test` | Vitest, single run. Database integration tests are skipped unless enabled; no database or `.env` is needed for the regular suite. |
 | Tests in watch mode | `npm run test:watch` | For development. |
-| Database integration tests (optional) | `CHAT_INTEGRATION=1 npm test -- app/actions/chats.integration.test.ts app/actions/group-chats.integration.test.ts` | Needs `.env` and the migrations applied. They create and remove their own test data. |
+| Database integration tests (optional) | `CHAT_INTEGRATION=1 npm test -- Tests/actions/chats.integration.test.ts Tests/actions/group-chats.integration.test.ts` | Needs `.env` and the migrations applied. They create and remove their own test data. |
 | **Production build** | `npm run build` | Needs `.env` and internet access (fonts are fetched from Google Fonts). |
 | Run the production build | `npm run start` | After `npm run build`. |
 
@@ -197,23 +197,24 @@ HikeNow/
 └── hike-now/                  # the Next.js application: run every npm command from here
     ├── app/
     │   ├── actions/           # Server Actions with the database logic (auth, account, profile, reviews,
-    │   │                      #   hikes, follows, chats, group chats, members) and their tests
-    │   ├── components/        # reusable React components (navbar, cards, forms, chat UI, filters) and tests
-    │   ├── hooks/             # custom React hooks (useFollow, useChats, ...) and tests
+    │   │                      #   hikes, follows, chats, group chats, members)
+    │   ├── components/        # reusable React components (navbar, cards, forms, chat UI, filters)
+    │   ├── hooks/             # custom React hooks (useFollow, useChats, ...)
     │   ├── lib/               # helpers without UI: password hashing, sessions, rate limiting, validation,
-    │   │                      #   review tags and dates, hiker search, and tests
+    │   │                      #   review tags and dates, hiker search
     │   ├── db/                # Drizzle schema (schema.ts), database connections and SQL migrations/
     │   ├── chats/             # /chats page and its helpers (types, constants, utils)
     │   ├── feed/ login/ profile/ reviews/ search/   # one folder per route, each with its page.tsx
     │   ├── layout.tsx         # root layout (navbar, footer, theme)
     │   └── page.tsx           # home page: trail browsing
+    ├── Tests/                 # all Vitest tests, organized by the app area they cover
     ├── scripts/               # one-off database setup scripts (db:auth, db:profiles, db:chats, db:review-photos)
     ├── .env.example           # template for the environment variables (copy to .env)
     ├── package.json           # dependencies and npm scripts (dev, build, lint, test, db:*)
     └── eslint / tsconfig / next / vitest config files
 ```
 
-Tests live **next to the code they test** (`*.test.ts` / `*.test.tsx`); see [Tests](#tests).
+Tests live in `hike-now/Tests/` (`*.test.ts` / `*.test.tsx`); see [Tests](#tests).
 Documentation lives in this README; the weekly reports and the living document are in the team's
 [shared Google folder](https://drive.google.com/drive/folders/1Eg1H2vX3lAmY02DvXf1szu-1euWe6Js_?usp=sharing).
 
@@ -296,12 +297,13 @@ default), and the build needs internet access to download the fonts. Rate limiti
 endpoint is not configured yet (see the known limitations).
 
 ### Tests
-Tests are co-located with the code (`*.test.ts` / `*.test.tsx`) and cover server actions, hooks,
+Tests in `hike-now/Tests/` are organized by the app area they cover and include server actions, hooks,
 libraries and components. Test setup cleans the JSDOM document between tests.
 
 **Adding new tests**
 
-1. Add a file next to the feature using the naming convention `*.test.tsx`.
+1. Add a file under `hike-now/Tests/` using the naming convention `*.test.tsx`, organizing it in a
+   subfolder such as `actions/`, `components/`, `hooks/`, or `lib/`.
 2. Import `describe`, `it`, and `expect` from `vitest`.
 3. Render React components with `render` from `@testing-library/react`.
 4. Query the component the way a user would, preferably with `getByRole`, `getByLabelText`, or `getByText`.

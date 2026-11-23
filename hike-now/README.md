@@ -145,7 +145,7 @@ and clear site data to remove retained drafts from a shared device.
 Returning to the page or reconnecting also refreshes incoming messages immediately.
 
 Run the optional PostgreSQL integration tests with `CHAT_INTEGRATION=1 npm test --
-app/actions/chats.integration.test.ts app/actions/group-chats.integration.test.ts`
+Tests/actions/chats.integration.test.ts Tests/actions/group-chats.integration.test.ts`
 after applying the migration. They create isolated test accounts/trails, exercise
 direct and group conversations, and remove only their own fixtures afterward.
 The regular `npm test` run skips these database tests.

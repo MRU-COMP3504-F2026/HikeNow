@@ -1,0 +1,93 @@
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import FollowButton from "@/app/components/follow-button";
+
+const { hasActiveSession, push, followUser, unfollowUser, startConversation } = vi.hoisted(() => ({
+  hasActiveSession: vi.fn(), push: vi.fn(), followUser: vi.fn(), unfollowUser: vi.fn(), startConversation: vi.fn(),
+}));
+vi.mock("@/app/actions/auth", () => ({ hasActiveSession }));
+vi.mock("@/app/actions/follows", () => ({ followUser, unfollowUser }));
+vi.mock("@/app/actions/chats", () => ({ startConversation }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
+
+beforeEach(() => {
+  vi.resetAllMocks();
+  hasActiveSession.mockResolvedValue(true);
+});
+
+describe("FollowButton", () => {
+  it("persists a profile follow, enables messaging, and opens the saved conversation", async () => {
+    startConversation.mockResolvedValue("saved-thread");
+    render(<FollowButton name="Alex" followerId="me" followeeId="alex" />);
+    expect(screen.queryByRole("button", { name: "Message" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Follow Alex" }));
+    await waitFor(() => expect(followUser).toHaveBeenCalledWith("me", "alex"));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Message" })).toBeEnabled());
+    fireEvent.click(screen.getByRole("button", { name: "Message" }));
+    await waitFor(() => expect(startConversation).toHaveBeenCalledWith("alex"));
+    expect(push).toHaveBeenCalledWith("/chats?thread=saved-thread");
+    fireEvent.click(screen.getByRole("button", { name: "Unfollow Alex" }));
+    await waitFor(() => expect(unfollowUser).toHaveBeenCalledWith("me", "alex"));
+    expect(screen.queryByRole("button", { name: "Message" })).not.toBeInTheDocument();
+  });
+
+  it("does not enable messaging after a failed database follow", async () => {
+    followUser.mockRejectedValue(new Error("database unavailable"));
+    render(<FollowButton name="Alex" followerId="me" followeeId="alex" />);
+    fireEvent.click(screen.getByRole("button", { name: "Follow Alex" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Could not update");
+    expect(screen.queryByRole("button", { name: "Message" })).not.toBeInTheDocument();
+  });
+  it("shows Follow and switches to Following after clicking", async () => {
+    const onChange = vi.fn().mockResolvedValue(undefined);
+    render(<FollowButton name="Alex" onChange={onChange} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Follow Alex" }));
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith(true));
+
+    const button = await screen.findByRole("button", { name: "Unfollow Alex" });
+    expect(button).toHaveAttribute("aria-pressed", "true");
+    expect(button).toHaveTextContent("Following");
+  });
+
+  it("starts as Following with initialFollowing", () => {
+    render(<FollowButton name="Alex" initialFollowing />);
+    expect(screen.getByRole("button", { name: "Unfollow Alex" })).toBeInTheDocument();
+  });
+
+  it("is disabled while the request is pending and reverts on error", async () => {
+    let reject!: (e: Error) => void;
+    const onChange = vi.fn(() => new Promise<void>((_, r) => (reject = r)));
+    render(<FollowButton name="Alex" onChange={onChange} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Follow Alex" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Unfollow Alex" })).toBeDisabled());
+
+    reject(new Error("fail"));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Follow Alex" })).toBeEnabled(),
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("Could not update the follow status");
+  });
+
+  it("redirects signed-out or expired sessions without changing follow state", async () => {
+    hasActiveSession.mockResolvedValue(false);
+    const onChange = vi.fn();
+    render(<FollowButton name="Alex" onChange={onChange} />);
+    fireEvent.click(screen.getByRole("button", { name: "Follow Alex" }));
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/login"));
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Follow Alex" })).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("surfaces session-check failures rather than following or redirecting", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    hasActiveSession.mockRejectedValue(new Error("network"));
+    const onChange = vi.fn();
+    render(<FollowButton name="Alex" onChange={onChange} />);
+    fireEvent.click(screen.getByRole("button", { name: "Follow Alex" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Could not complete this action");
+    expect(push).not.toHaveBeenCalled();
+    expect(onChange).not.toHaveBeenCalled();
+  });
+});
